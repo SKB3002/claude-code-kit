@@ -1,0 +1,34 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-code-kit",
+  "description": "Marketplace entry for claude-code-kit — 20 subagents, 40 skills, 11 slash commands for Claude Code.",
+  "owner": {
+    "name": "Suyash Bhatkar",
+    "email": "info@apguru.com",
+    "url": "https://github.com/SKB3002"
+  },
+  "plugins": [
+    {
+      "name": "claude-code-kit",
+      "description": "20 specialist subagents, 40 skills, and 11 slash commands. Adapted from vudovn/antigravity-kit with Python/FastAPI/SQLAlchemy and LLM observability additions.",
+      "category": "development",
+      "author": {
+        "name": "Suyash Bhatkar",
+        "url": "https://github.com/SKB3002"
+      },
+      "source": {
+        "source": "url",
+        "url": "https://github.com/SKB3002/claude-code-kit.git"
+      },
+      "homepage": "https://github.com/SKB3002/claude-code-kit",
+      "keywords": [
+        "agents",
+        "skills",
+        "workflows",
+        "fastapi",
+        "sqlalchemy",
+        "llm-observability"
+      ]
+    }
+  ]
+}
