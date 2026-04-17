@@ -25,7 +25,7 @@ Thanks for your interest in improving the kit. All contributions are welcome —
 
 - **Subagents** live in `agents/` as flat `.md` files with YAML frontmatter (`name`, `description`, `tools`, `model`, `skills`).
 - **Skills** live in `skills/<skill-name>/SKILL.md` with optional sub-reference files (e.g., `rest.md`, `graphql.md`).
-- **Slash commands** live in `commands/` as flat `.md` files. Claude Code namespaces them as `/claude-code-kit:<name>` — do not prefix filenames.
+- **Slash commands** live in `commands/` as flat `.md` files. Claude Code namespaces them as `/kit:<name>` — do not prefix filenames.
 - **Validation scripts** live in `skills/<skill-name>/scripts/` co-located with the skill that owns them. Keep them dependency-light; prefer stdlib.
 - **Hooks** (optional, off by default) live in `hooks/hooks.json`. Ship examples in `hooks/hooks.example.json` and document them in `hooks/README.md`. Do not auto-enable.
 - **MCP servers** (optional, off by default) follow the same pattern: `.mcp.json` stays empty, examples live in `.mcp.example.json`, documented in `mcp-servers.md`.

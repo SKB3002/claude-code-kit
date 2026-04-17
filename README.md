@@ -42,7 +42,7 @@ git clone https://github.com/SKB3002/claude-code-kit.git ~/.claude/plugins/claud
 Then activate the kit's routing protocol by adding one line to your project's `CLAUDE.md`:
 
 ```
-@claude-code-kit/KIT_PROTOCOL.md
+@kit/KIT_PROTOCOL.md
 ```
 
 That pulls the request classifier, agent routing, and Socratic Gate into every session.
@@ -62,7 +62,7 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 
 ### Slash commands
 
-All commands are namespaced by the plugin — Claude Code renders them as `/claude-code-kit:<name>` (or use your own alias):
+All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>` (or use your own alias):
 
 `brainstorm` · `create` · `debug` · `deploy` · `enhance` · `orchestrate` · `plan` · `preview` · `status` · `test` · `ui-ux-pro-max`
 
@@ -120,17 +120,17 @@ Full guide: [hooks/README.md](hooks/README.md).
 
 ```bash
 # 1) Explore the codebase or frame the problem
-/claude-code-kit:brainstorm auth refactor
+/kit:brainstorm auth refactor
 
 # 2) Create a plan (no code yet)
-/claude-code-kit:plan FastAPI rate limiting with Redis
+/kit:plan FastAPI rate limiting with Redis
 
 # 3) Orchestrate multiple agents to implement it
-/claude-code-kit:orchestrate implement the plan in docs/PLAN-rate-limit.md
+/kit:orchestrate implement the plan in docs/PLAN-rate-limit.md
 
 # 4) Run pre-deploy checks
-/claude-code-kit:test
-/claude-code-kit:deploy staging
+/kit:test
+/kit:deploy staging
 ```
 
 ---

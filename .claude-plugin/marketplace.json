@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "claude-code-kit",
+      "name": "kit",
       "description": "20 specialist subagents, 40 skills, and 11 slash commands. Adapted from vudovn/antigravity-kit with Python/FastAPI/SQLAlchemy and LLM observability additions.",
       "category": "development",
       "author": {

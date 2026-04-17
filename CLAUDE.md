@@ -42,12 +42,12 @@ Four top-level primitive folders, each with a rigid convention. Do not reorganiz
 
 - **[agents/](agents/)** — flat `.md` files, one per subagent. YAML frontmatter is load-bearing: `name`, `description`, `tools`, `model`, `skills`. The `skills:` list drives the *modular skill loading* flow described below.
 - **[skills/](skills/)** — one folder per skill, entry point is `SKILL.md`. Optional sub-reference files (e.g., `rest.md`, `graphql.md`) are pulled in selectively. Validation scripts for a skill live **inside** that skill's folder at `skills/<skill>/scripts/` — they are co-located on purpose so the skill owns its own tooling.
-- **[commands/](commands/)** — flat `.md` files. Claude Code auto-namespaces them as `/claude-code-kit:<filename>`. Do **not** prefix the filename yourself.
+- **[commands/](commands/)** — flat `.md` files. Claude Code auto-namespaces them as `/kit:<filename>` (the `kit` prefix comes from the `name` field in [plugin.json](.claude-plugin/plugin.json) — the repo/marketplace is still `claude-code-kit`, only the plugin handle is `kit`). Do **not** prefix the filename yourself.
 - **[hooks/](hooks/)** — ships `hooks.json` intentionally empty. Real examples live in `hooks.example.json`; users copy entries in to opt in. Never auto-enable anything here.
 
 Cross-cutting:
 
-- **[KIT_PROTOCOL.md](KIT_PROTOCOL.md)** is the plugin's "runtime." Host projects import it via `@claude-code-kit/KIT_PROTOCOL.md` in their own `CLAUDE.md`. Any change to agent routing, tier rules, validation script inventory, or slash-command mapping belongs here — and must stay in sync with the underlying files it references.
+- **[KIT_PROTOCOL.md](KIT_PROTOCOL.md)** is the plugin's "runtime." Host projects import it via `@kit/KIT_PROTOCOL.md` in their own `CLAUDE.md` (the alias matches the plugin name, not the repo name). Any change to agent routing, tier rules, validation script inventory, or slash-command mapping belongs here — and must stay in sync with the underlying files it references.
 - **[.mcp.json](.mcp.json)** ships empty by design; examples live in [.mcp.example.json](.mcp.example.json), documented in [mcp-servers.md](mcp-servers.md). Same opt-in discipline as hooks.
 
 ### The modular skill-loading flow
@@ -78,7 +78,7 @@ P0 ([KIT_PROTOCOL.md](KIT_PROTOCOL.md)) > P1 (agent `.md`) > P2 (skill `SKILL.md
 
 ## Gotchas (landmines from the port)
 
-- **Don't re-prefix slash-command filenames with `kit-`.** The old antigravity pattern is obsolete — Claude Code namespaces via `/claude-code-kit:<name>` automatically.
+- **Don't re-prefix slash-command filenames with `kit-`.** The old antigravity pattern is obsolete — Claude Code namespaces via `/kit:<name>` automatically (driven by `plugin.json` `name`).
 - **`react-best-practices` was renamed to `nextjs-react-expert`.** Skill folder and frontmatter both match the new name. Don't reintroduce the old name in references.
 - **`.agent/scripts/verify_all.py` and `checklist.py` do not exist here.** The upstream protocol referenced them, but they were never shipped. Removed during the port — don't re-add without an actual implementation.
 - **JSON has no comments.** `hooks.json` and `.mcp.json` are strict JSON and must stay clean. The `_doc` key convention is allowed **only** in the `*.example.json` files, never the live ones.

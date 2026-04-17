@@ -1,6 +1,6 @@
 {
-  "name": "claude-code-kit",
-  "version": "0.1.0",
+  "name": "kit",
+  "version": "0.2.0",
   "description": "20 specialist subagents, 40 skills, and 11 slash commands for Claude Code. A port and adaptation of antigravity-kit for the Claude Code ecosystem.",
   "author": {
     "name": "Suyash Bhatkar",

@@ -2,6 +2,18 @@
 
 All notable changes to Claude Code Kit are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-04-18
+
+### ⚠️ Breaking
+
+- **Slash-command namespace renamed from `/claude-code-kit:<name>` to `/kit:<name>`.** The plugin `name` in [.claude-plugin/plugin.json](.claude-plugin/plugin.json) changed from `claude-code-kit` to `kit`. This also changes the `@`-import alias used by host projects: `@claude-code-kit/KIT_PROTOCOL.md` → `@kit/KIT_PROTOCOL.md`.
+- Update any host project's `CLAUDE.md` that imports the protocol. The repo, marketplace, and branding remain `claude-code-kit` — only the plugin handle changed.
+
+### Changed
+
+- [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) plugin entry `name` updated to `kit` to match `plugin.json`.
+- Docs ([README.md](README.md), [KIT_PROTOCOL.md](KIT_PROTOCOL.md), [CLAUDE.md](CLAUDE.md), [CONTRIBUTING.md](CONTRIBUTING.md)) updated to use the new `/kit:<name>` prefix and `@kit/` import alias.
+
 ## [0.1.0] — 2026-04-17
 
 _First preview release. Structural port of [antigravity-kit](https://github.com/vudovn/antigravity-kit) with Claude Code-native primitives and a stack-aware expansion._

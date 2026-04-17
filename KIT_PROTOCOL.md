@@ -11,7 +11,7 @@ Adapted for Claude Code from the original Antigravity Kit `GEMINI.md`. Attributi
 The host project's `CLAUDE.md` should reference this file with:
 
 ```markdown
-@claude-code-kit/KIT_PROTOCOL.md
+@kit/KIT_PROTOCOL.md
 ```
 
 That pulls these rules into every session in the project without duplicating them. When the plugin is installed globally, the protocol is loaded automatically by the plugin manifest.
@@ -207,17 +207,17 @@ Claude Code doesn't have hard "modes"; slash commands replace them.
 
 | Intent | Command | Behavior |
 |--------|---------|----------|
-| Plan a feature | `/claude-code-kit:plan <desc>` | `project-planner` agent, produces `docs/PLAN-{slug}.md`. **No code.** |
-| Brainstorm | `/claude-code-kit:brainstorm <idea>` | Structured exploration, 3 options with trade-offs |
-| Build new | `/claude-code-kit:create <desc>` | `project-planner` + `app-builder` skill, scaffolds the app |
-| Enhance existing | `/claude-code-kit:enhance <desc>` | Iterative updates, approval gate on large diffs |
-| Orchestrate | `/claude-code-kit:orchestrate <desc>` | ≥3 agents in parallel, 2-phase (Plan → approval → implement) |
-| Debug | `/claude-code-kit:debug <issue>` | 7-step systematic-debugging skill |
-| Deploy | `/claude-code-kit:deploy <target>` | Pre-deploy checklist + stack-specific deploy flow |
-| Test | `/claude-code-kit:test [target]` | Stack-aware test runner / generator |
-| Preview | `/claude-code-kit:preview [start\|stop\|check]` | Dev-server lifecycle |
-| Status | `/claude-code-kit:status` | Project snapshot (git, stack, PLAN files, running servers) |
-| UI/UX | `/claude-code-kit:ui-ux-pro-max <desc>` | `frontend-specialist` + design skills |
+| Plan a feature | `/kit:plan <desc>` | `project-planner` agent, produces `docs/PLAN-{slug}.md`. **No code.** |
+| Brainstorm | `/kit:brainstorm <idea>` | Structured exploration, 3 options with trade-offs |
+| Build new | `/kit:create <desc>` | `project-planner` + `app-builder` skill, scaffolds the app |
+| Enhance existing | `/kit:enhance <desc>` | Iterative updates, approval gate on large diffs |
+| Orchestrate | `/kit:orchestrate <desc>` | ≥3 agents in parallel, 2-phase (Plan → approval → implement) |
+| Debug | `/kit:debug <issue>` | 7-step systematic-debugging skill |
+| Deploy | `/kit:deploy <target>` | Pre-deploy checklist + stack-specific deploy flow |
+| Test | `/kit:test [target]` | Stack-aware test runner / generator |
+| Preview | `/kit:preview [start\|stop\|check]` | Dev-server lifecycle |
+| Status | `/kit:status` | Project snapshot (git, stack, PLAN files, running servers) |
+| UI/UX | `/kit:ui-ux-pro-max <desc>` | `frontend-specialist` + design skills |
 
 **Plan mode (4-phase):**
 
