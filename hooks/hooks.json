@@ -1,6 +1,8 @@
 {
-  "PostToolUse": [],
-  "PreToolUse": [],
-  "Stop": [],
-  "UserPromptSubmit": []
+  "hooks": {
+    "PostToolUse": [],
+    "PreToolUse": [],
+    "Stop": [],
+    "UserPromptSubmit": []
+  }
 }

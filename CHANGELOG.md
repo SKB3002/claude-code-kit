@@ -2,6 +2,12 @@
 
 All notable changes to Claude Code Kit are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] — 2026-04-18
+
+### Fixed
+
+- **Plugin failed to load on Claude Code v2.1.x** due to hook-manifest schema mismatch. `hooks.json` and `hooks.example.json` used the legacy flat-event format (`{ "PostToolUse": [...] }`); current Claude Code expects events nested under a top-level `hooks` key (`{ "hooks": { "PostToolUse": [...] } }`). Both files now match the required shape.
+
 ## [0.2.0] — 2026-04-18
 
 ### ⚠️ Breaking
