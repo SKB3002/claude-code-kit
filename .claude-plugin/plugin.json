@@ -1,0 +1,23 @@
+{
+  "name": "claude-code-kit",
+  "version": "0.1.0",
+  "description": "20 specialist subagents, 40 skills, and 11 slash commands for Claude Code. A port and adaptation of antigravity-kit for the Claude Code ecosystem.",
+  "author": {
+    "name": "Suyash Bhatkar",
+    "url": "https://github.com/SKB3002"
+  },
+  "homepage": "https://github.com/SKB3002/claude-code-kit",
+  "repository": "https://github.com/SKB3002/claude-code-kit",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "agents",
+    "subagents",
+    "skills",
+    "slash-commands",
+    "workflows",
+    "developer-tools",
+    "ai-agents"
+  ]
+}
