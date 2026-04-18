@@ -7,86 +7,98 @@ estimated-tokens: "20k–50k"
 risk: Plans for large multi-phase initiatives can approach HEAVY if the planner pulls in many file reads.
 ---
 
-# /plan — Project Planning Mode
+# /kit:plan — Project Planning Mode
 
 $ARGUMENTS
 
 ---
 
-## 🔴 Rules
+## 🔴 Absolute rules
 
-1. **NO CODE WRITING** — this command creates a plan file only
-2. **Use the `project-planner` agent** (via the `Agent` tool)
-3. **Socratic Gate** — ask clarifying questions before planning
-4. **Dynamic naming** — plan file named from the task slug
+1. **No code writing.** This command produces a plan file only.
+2. **Dynamic naming.** `docs/PLAN-{slug}.md` — slug derived from the request, lowercase, hyphen-separated, ≤ 30 chars.
 
 ---
 
-## Task
+## Flow
 
-Invoke the `project-planner` agent with this context:
+**Step 1 — Parse bypass flag.**
+If `$ARGUMENTS` starts with `--yes` or `-y`, set `bypass = true` and strip the flag.
+
+**Step 2 — Load the approval-gate skill.**
+Read `skills/approval-gate/SKILL.md`.
+
+**Step 3 — Compute the plan.**
+- Planned agent: `kit:project-planner`
+- Planned skills: `kit:plan-writing`, `kit:socratic-gate`, `kit:clean-code`
+- Tier: MEDIUM
+
+**Step 4 — Render the MEDIUM gate (skip if `bypass`).**
 
 ```
-CONTEXT:
-- User Request: $ARGUMENTS
-- Mode: PLANNING ONLY (no code)
-- Output: docs/PLAN-{task-slug}.md (dynamic naming)
+⚖️  /kit:plan "<stripped args>"
+    → kit:project-planner  (+ kit:plan-writing, kit:socratic-gate, kit:clean-code)
+    Tier: MEDIUM · 20k–50k tokens · writes 1 file (docs/PLAN-<slug>.md)
+    Proceed? (y/n/tweak)
+```
 
-NAMING:
-1. Extract 2-3 key words from the request
-2. lowercase, hyphen-separated
-3. Max 30 characters
-4. Example: "e-commerce cart" → PLAN-ecommerce-cart.md
+Replies per §3.4 of the approval-gate skill. On cancel: append cancelled-run entry to `.kit/usage.json`, print `🚫 Cancelled. No plan written.` and stop.
 
-RULES:
-1. Follow project-planner agent's Socratic Gate before planning
-2. Create PLAN-{slug}.md with task breakdown, dependencies, verification checklist
-3. DO NOT write code
-4. REPORT the exact file name created
+**Step 5 — Dispatch.**
+Derive the slug: extract 2–3 key words → lowercase → hyphen-joined → trim to 30 chars. Then:
+
+```
+Agent(
+  subagent_type="kit:project-planner",
+  description="Plan: <short subject>",
+  prompt=<<
+    CONTEXT:
+    - User request: $ARGUMENTS
+    - Mode: PLANNING ONLY — no code.
+    - Output: docs/PLAN-<slug>.md
+
+    TASK:
+    1. Follow the project-planner's Socratic Gate before writing.
+    2. Write docs/PLAN-<slug>.md with: goals, task breakdown, dependencies,
+       agent assignments, and a verification checklist.
+    3. Do NOT write code files.
+    4. Return the exact filename you created.
+  >>
+)
+```
+
+**Step 6 — Append to the usage log** per §5 of the approval-gate skill. `files_written` includes only the `PLAN-*.md` (the planner may also read many files; those are reads, not writes).
+
+**Step 7 — Print the inline ledger.**
+
+```
+📒  /kit:plan ledger
+Ran: kit:project-planner
+Skills: kit:plan-writing, kit:socratic-gate, kit:clean-code
+Plan file: docs/PLAN-<slug>.md
+Approximate tokens: ~<N>k
+Tier declared: MEDIUM (20k–50k) · observed: ~<N>k (<in-tier ✓ | drift ✗>) · duration: <Xm Ys>
+Logged to .kit/usage.json (<run-id>)
+Next suggested: /kit:create  (if greenfield) or /kit:enhance  (if adding to existing app)
 ```
 
 ---
 
-## Expected Output
+## Naming examples
 
-| Deliverable | Location |
-|-------------|----------|
-| Project Plan | `docs/PLAN-{slug}.md` |
-| Task Breakdown | Inside plan file |
-| Agent Assignments | Inside plan file |
-| Verification Checklist | Final phase of plan file |
-
----
-
-## After Planning
-
-```
-[OK] Plan created: docs/PLAN-{slug}.md
-
-Next:
-- Review the plan
-- Run /create (new apps) or /enhance (existing) to start implementation
-- Or edit the plan manually
-```
-
----
-
-## Naming Examples
-
-| Request | Plan File |
-|---------|-----------|
-| `/plan e-commerce site with cart` | `docs/PLAN-ecommerce-cart.md` |
-| `/plan mobile app for fitness` | `docs/PLAN-fitness-app.md` |
-| `/plan add dark mode feature` | `docs/PLAN-dark-mode.md` |
-| `/plan fix authentication bug` | `docs/PLAN-auth-fix.md` |
-| `/plan FastAPI rate limiting` | `docs/PLAN-rate-limit.md` |
+| Request | Plan file |
+|---|---|
+| `/kit:plan e-commerce site with cart` | `docs/PLAN-ecommerce-cart.md` |
+| `/kit:plan mobile app for fitness`    | `docs/PLAN-fitness-app.md` |
+| `/kit:plan add dark mode feature`     | `docs/PLAN-dark-mode.md` |
+| `/kit:plan FastAPI rate limiting`     | `docs/PLAN-rate-limit.md` |
 
 ---
 
 ## Usage
 
 ```
-/plan e-commerce site with cart
-/plan SaaS dashboard with analytics
-/plan LLM observability integration with Langfuse
+/kit:plan e-commerce site with cart
+/kit:plan SaaS dashboard with analytics
+/kit:plan -y LLM observability integration with Langfuse   (bypass gate)
 ```
