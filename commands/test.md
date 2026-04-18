@@ -2,129 +2,132 @@
 description: Generate tests, run existing tests, or show coverage. Stack-aware (pytest, Jest, Vitest, etc.).
 argument-hint: [target|coverage|watch]
 tier: MEDIUM
-tier-rationale: Single test-engineer agent; may write 1–5 test files or just run existing suite.
+tier-rationale: Generation mode dispatches test-engineer and may write 1–5 files. Run-only modes (no args, coverage, watch) are LIGHT and skip the gate.
 estimated-tokens: "15k–60k"
 risk: Generating tests from scratch for a large module pulls many file reads and can drift toward HEAVY.
 ---
 
-# /test — Test Generation & Execution
+# /kit:test — Test Generation & Execution
 
 $ARGUMENTS
 
 ---
 
-## Purpose
+## Flow
 
-Generate tests, run existing tests, or report coverage. Adapts to the detected stack.
+**Step 1 — Parse bypass flag.**
+If `$ARGUMENTS` starts with `--yes` or `-y`, set `bypass = true` and strip the flag.
 
-### Sub-commands
+**Step 2 — Classify the sub-command.**
 
-```
-/test                — run all tests
-/test <file/feature> — generate tests for target
-/test coverage       — show coverage report
-/test watch          — watch mode
-```
+| Pattern in stripped args | Mode | Effective tier |
+|---|---|---|
+| *empty*                   | RUN-ALL | LIGHT |
+| `coverage`                | COVERAGE | LIGHT |
+| `watch`                   | WATCH | LIGHT |
+| a file path or feature    | GENERATE | MEDIUM |
 
----
+**Step 3 — RUN-ALL / COVERAGE / WATCH path (LIGHT — no gate).**
 
-## Stack Detection & Commands
+Detect the stack, run the matching command (table below), stream output, append a LIGHT entry to `.kit/usage.json` with `agents: []`. Done.
 
 | Stack | Run | Coverage | Watch |
-|-------|-----|----------|-------|
+|---|---|---|---|
 | **Jest / Vitest** | `npm test` | `npm run coverage` or `vitest --coverage` | `vitest --watch` |
 | **pytest** | `pytest` | `pytest --cov=app --cov-report=term-missing` | `pytest-watch` |
-| **Playwright** | `npx playwright test` | `--reporter=html` | `npx playwright test --ui` |
-| **go test** | `go test ./...` | `go test -cover ./...` | N/A |
+| **Playwright** | `npx playwright test` | `npx playwright test --reporter=html` | `npx playwright test --ui` |
+| **go** | `go test ./...` | `go test -cover ./...` | n/a |
 | **cargo** | `cargo test` | `cargo tarpaulin` | `cargo watch -x test` |
 
----
+**Step 4 — GENERATE path (MEDIUM — gate required).**
 
-## Generation Flow
+Load `skills/approval-gate/SKILL.md`. Compute:
+- Planned agent: `kit:test-engineer`
+- Planned skills: `kit:testing-patterns`, `kit:tdd-workflow`, `kit:clean-code`
+- Tier: MEDIUM
 
-1. **Analyze target**
-   - Parse functions, methods, classes
-   - Identify edge cases (empty input, None, large values, concurrent access)
-   - Detect external dependencies to mock
-
-2. **Generate test cases**
-   - Happy path
-   - Error cases
-   - Edge cases
-   - Integration (if target spans layers)
-
-3. **Write tests**
-   - Match project's existing test framework
-   - Follow existing conventions (fixtures, naming, directory layout)
-   - Mock only external boundaries; never the code under test
-
----
-
-## Output Format
-
-### For Generation
-
-```markdown
-## 🧪 Tests: [Target]
-
-### Test Plan
-| Test Case | Type | Coverage |
-|-----------|------|----------|
-| Should create user | Unit | Happy path |
-| Should reject invalid email | Unit | Validation |
-| Should handle DB error | Integration | Error case |
-
-### Generated Tests
-`tests/<file>.test.ts` — or — `tests/unit/test_<file>.py`
-
-[code block]
-
-Run with: `pytest tests/unit/test_<file>.py` or `npm test`
-```
-
-### For Execution
+Render the gate (skip if `bypass`):
 
 ```
-🧪 Running tests…
+⚖️  /kit:test "<target>"
+    → kit:test-engineer  (+ kit:testing-patterns, kit:tdd-workflow, kit:clean-code)
+    Tier: MEDIUM · 15k–60k tokens · writes 1–5 test files
+    Proceed? (y/n/tweak)
+```
 
-✅ tests/unit/test_auth.py (5 passed)
-✅ tests/unit/test_user.py (8 passed)
-❌ tests/integration/test_order.py (2 passed, 1 failed)
+Replies per §3.4 of the approval-gate skill. On cancel: append cancelled-run to `.kit/usage.json`, print `🚫 Cancelled. No tests generated.` and stop.
 
-Failed:
-  ✗ test_calculate_total_with_discount
-    Expected: 90
-    Received: 100
+**Step 5 — Dispatch (GENERATE only).**
 
-Total: 15 (14 passed, 1 failed)
+```
+Agent(
+  subagent_type="kit:test-engineer",
+  description="Generate tests: <target>",
+  prompt=<<
+    TARGET: <stripped args>
+
+    CONTEXT:
+    - Auto-detect the project's existing test framework and follow its conventions
+      (fixture style, directory layout, naming).
+    - Mock only external boundaries — never the code under test.
+
+    TASK:
+    1. Analyze the target: parse functions/classes, list edge cases (empty,
+       None, large, concurrent), identify external deps.
+    2. Produce a short Test Plan table (case / type / coverage).
+    3. Write the tests to the conventional path for this stack.
+    4. Report the filename(s) written and the command to run them.
+  >>
+)
+```
+
+**Step 6 — Append to the usage log** per §5 of the approval-gate skill.
+
+**Step 7 — Print the inline ledger (GENERATE mode).**
+
+```
+📒  /kit:test ledger
+Ran: kit:test-engineer
+Skills: kit:testing-patterns, kit:tdd-workflow, kit:clean-code
+Test files written: <N>  →  <paths>
+Approximate tokens: ~<N>k
+Tier declared: MEDIUM (15k–60k) · observed: ~<N>k (<in-tier ✓ | drift ✗>) · duration: <Xm Ys>
+Logged to .kit/usage.json (<run-id>)
+Next suggested: /kit:test   (run the new suite, LIGHT)
+```
+
+For RUN-ALL / COVERAGE / WATCH modes, print a one-line ledger:
+
+```
+📒  /kit:test ledger  · mode: <run-all|coverage|watch>  · tier: LIGHT  · duration: <Xs>  · logged as <run-id>
 ```
 
 ---
 
-## FastAPI Test Patterns
+## Key principles (inherited by the test-engineer agent)
 
-### Async Integration Test
+- Test behavior, not implementation
+- One logical assertion per test (when practical)
+- Descriptive names: `test_rejects_invalid_email` beats `test_1`
+- Arrange-Act-Assert pattern
+- Mock external APIs / DBs in unit tests — real DB in integration tests
+
+---
+
+## FastAPI patterns (quick reference; full content lives in `kit:testing-patterns`)
 
 ```python
+# Async integration
 from httpx import AsyncClient
-
 async def test_create_user(client: AsyncClient):
     r = await client.post("/api/v1/users", json={"email": "a@b.com"})
     assert r.status_code == 201
-    assert r.json()["email"] == "a@b.com"
-```
 
-> Uses `asyncio_mode = "auto"` — no `@pytest.mark.asyncio` needed.
-
-### Mocking LLM Calls
-
-```python
+# Mocking LLM
 from unittest.mock import AsyncMock
-
-async def test_chat_uses_gemini(monkeypatch):
-    mock = AsyncMock(return_value="hello")
-    monkeypatch.setattr("app.services.llm.gemini_service.generate", mock)
-    # ... call the endpoint, assert on behavior
+async def test_chat(monkeypatch):
+    monkeypatch.setattr("app.services.llm.gemini_service.generate",
+                        AsyncMock(return_value="hi"))
 ```
 
 ---
@@ -132,19 +135,10 @@ async def test_chat_uses_gemini(monkeypatch):
 ## Examples
 
 ```
-/test app/services/auth_service.py
-/test user registration flow
-/test coverage
-/test --watch
-/test integration/test_llm_retry.py
+/kit:test                                        # run all (LIGHT, no gate)
+/kit:test coverage                               # coverage report (LIGHT, no gate)
+/kit:test watch                                  # watch mode (LIGHT, no gate)
+/kit:test app/services/auth_service.py           # generate (MEDIUM, gated)
+/kit:test user registration flow                 # generate (MEDIUM, gated)
+/kit:test -y integration/test_llm_retry.py       # generate, bypass gate
 ```
-
----
-
-## Key Principles
-
-- **Test behavior, not implementation**
-- **One assertion per test** (when practical)
-- **Descriptive names** (`test_rejects_invalid_email` beats `test_1`)
-- **Arrange-Act-Assert pattern**
-- **Mock external APIs, DBs in unit tests — real DB in integration tests**
