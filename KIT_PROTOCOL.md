@@ -201,23 +201,46 @@ python ${CLAUDE_PLUGIN_ROOT}/skills/<skill>/scripts/<script>.py
 
 To wire any of these into Claude Code hooks (so they run automatically after edits), see [hooks/README.md](hooks/README.md). Hooks are **off by default**.
 
+### Approval gate (P0)
+
+**Contract:** no MEDIUM or HEAVY `/kit:*` command dispatches an agent or writes a file until the user has approved the gate (or passed `--yes` / `-y`). LIGHT commands run directly. This is load-bearing for the $20-plan users the kit targets.
+
+| Tier | Gate behaviour |
+|---|---|
+| LIGHT  | No gate. Runs directly. |
+| MEDIUM | One-line preview + `y/n/tweak` confirm. |
+| HEAVY  | Full preview: planned agents (in order), planned skills, tier + estimated tokens + wall-clock, risk, MoSCoW, **≥2 lighter alternatives**, budget line (if set), reply options. |
+
+Every command's `tier`, `tier-rationale`, and `estimated-tokens` live in its frontmatter and are the single source of truth. The skill that renders the gate and appends the usage-log entry is [skills/approval-gate/SKILL.md](skills/approval-gate/SKILL.md); tier taxonomy and the token-estimation formula live in [skills/approval-gate/tiers.md](skills/approval-gate/tiers.md).
+
+**Honesty rules (P0):**
+
+- Every token number shown to the user carries `~` (approximate)
+- Never convert tokens to dollars
+- Never fabricate remaining-quota or reset-timestamp numbers — Claude Code doesn't expose them
+- Every run (approved, bypassed, or cancelled) appends one entry to `<project-root>/.kit/usage.json` — the file is gitignored and the user can wipe it with `/kit:ledger clear`
+
+**Optional budget file:** `~/.kit/budget.json` (home) with optional project-local override. If absent, gate behaviour is unchanged — the kit never auto-creates the file and never prompts for it.
+
 ### Slash-command mapping
 
-Claude Code doesn't have hard "modes"; slash commands replace them.
+Claude Code doesn't have hard "modes"; slash commands replace them. The **Tier** column is authoritative — it determines gate behaviour.
 
-| Intent | Command | Behavior |
-|--------|---------|----------|
-| Plan a feature | `/kit:plan <desc>` | `project-planner` agent, produces `docs/PLAN-{slug}.md`. **No code.** |
-| Brainstorm | `/kit:brainstorm <idea>` | Structured exploration, 3 options with trade-offs |
-| Build new | `/kit:create <desc>` | `project-planner` + `app-builder` skill, scaffolds the app |
-| Enhance existing | `/kit:enhance <desc>` | Iterative updates, approval gate on large diffs |
-| Orchestrate | `/kit:orchestrate <desc>` | ≥3 agents in parallel, 2-phase (Plan → approval → implement) |
-| Debug | `/kit:debug <issue>` | 7-step systematic-debugging skill |
-| Deploy | `/kit:deploy <target>` | Pre-deploy checklist + stack-specific deploy flow |
-| Test | `/kit:test [target]` | Stack-aware test runner / generator |
-| Preview | `/kit:preview [start\|stop\|check]` | Dev-server lifecycle |
-| Status | `/kit:status` | Project snapshot (git, stack, PLAN files, running servers) |
-| UI/UX | `/kit:ui-ux-pro-max <desc>` | `frontend-specialist` + design skills |
+| Intent | Command | Tier | Behavior |
+|--------|---------|------|----------|
+| Plan a feature | `/kit:plan <desc>` | MEDIUM | `project-planner` agent, produces `docs/PLAN-{slug}.md`. **No code.** |
+| Brainstorm | `/kit:brainstorm <idea>` | MEDIUM | `product-manager`, 3 options with trade-offs |
+| Build new | `/kit:create <desc>` | HEAVY | `project-planner` + specialists, scaffolds the app |
+| Enhance existing | `/kit:enhance <desc>` | HEAVY | Iterative updates, full gate with MoSCoW + alternatives |
+| Orchestrate | `/kit:orchestrate <desc>` | HEAVY | ≥3 agents in parallel, 2-phase (Plan → approval → implement) |
+| Debug | `/kit:debug <issue>` | MEDIUM | `debugger` + systematic-debugging skill |
+| Deploy | `/kit:deploy <target>` | HEAVY | Pre-flight checklist + stack-specific deploy flow |
+| Test | `/kit:test [target]` | LIGHT / MEDIUM | Run = LIGHT (no gate); generate = MEDIUM gated |
+| Preview | `/kit:preview [start\|stop\|check]` | LIGHT | Dev-server lifecycle |
+| Status | `/kit:status` | LIGHT | Project snapshot (git, stack, PLAN files, running servers) |
+| UI/UX | `/kit:ui-ux-pro-max <desc>` | HEAVY | `frontend-specialist` + design skills |
+| Budget | `/kit:budget [low\|medium\|ok\|clear]` | LIGHT | Opt-in budget file at `~/.kit/budget.json` |
+| Ledger | `/kit:ledger [weekly\|by-agent\|roi\|…]` | LIGHT | Read-only views over `.kit/usage.json` |
 
 **Plan mode (4-phase):**
 
@@ -280,7 +303,7 @@ For design work: open and read the agent file. The rules are there.
 - **Backend / Python**: `fastapi-expert`, `sqlalchemy-expert`, `python-patterns`, `api-patterns`, `database-design`
 - **LLM**: `llm-observability`, `mcp-builder`
 - **Frontend**: `frontend-design`, `web-design-guidelines`, `tailwind-patterns`, `nextjs-react-expert`, `mobile-design`
-- **Workflow**: `socratic-gate`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
+- **Workflow**: `socratic-gate`, `approval-gate`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
 
 ---
 

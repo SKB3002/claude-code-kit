@@ -5,9 +5,11 @@
 | Version target | `0.3.0` |
 | Branch | `feat/v0.3-agents-discoverability` |
 | Base | `main` at `3ce8f80` (v0.2.1) |
-| Status | Planning — not yet implemented |
+| Status | Phase 1 shipped — approval-first dispatch, `/kit:budget`, `/kit:ledger` all on the branch. Phase 2+ pending. |
 | Author | Suyash Bhatkar |
 | Plan created | 2026-04-18 |
+
+> **See also:** [PLAN-v0.3-user-approval-economy.md](PLAN-v0.3-user-approval-economy.md) — the companion plan that replaces Phase 1's "Automatic Agent Dispatch" with an **approval-first** model and adds `/kit:budget` + `/kit:ledger` + the approval-gate skill. Both ship together in v0.3.0.
 
 ---
 

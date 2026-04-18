@@ -1,6 +1,6 @@
 # Claude Code Kit
 
-> A comprehensive Claude Code plugin that ships **20 specialist subagents**, **40 skills**, and **11 slash commands** — adapted from [antigravity-kit](https://github.com/vudovn/antigravity-kit) for the Claude Code ecosystem.
+> A comprehensive Claude Code plugin that ships **20 specialist subagents**, **41 skills**, and **13 slash commands** — adapted from [antigravity-kit](https://github.com/vudovn/antigravity-kit) for the Claude Code ecosystem.
 
 Claude Code Kit gives your Claude Code sessions an instant upgrade: domain experts that activate automatically, deep knowledge modules loaded on demand, and workflow commands that orchestrate entire feature builds. Built to augment Claude Code's native features — never to shadow them.
 
@@ -54,8 +54,8 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 | Primitive | Count | Location |
 |---|---|---|
 | Subagents | 20 | [`agents/`](agents/) |
-| Skills | 40 | [`skills/`](skills/) |
-| Slash commands | 11 | [`commands/`](commands/) |
+| Skills | 41 | [`skills/`](skills/) |
+| Slash commands | 13 | [`commands/`](commands/) |
 | Validation scripts | 16 | `skills/<skill>/scripts/` (co-located with the skill) |
 | MCP servers | 5 pre-validated, opt-in | [`.mcp.example.json`](.mcp.example.json) + [`mcp-servers.md`](mcp-servers.md) |
 | Hooks | opt-in scaffold | [`hooks/`](hooks/) |
@@ -64,7 +64,9 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 
 All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>`. **Always invoke with the `/kit:` prefix** so it's clear the command is from this kit (and won't collide with built-ins or other plugins):
 
-`/kit:brainstorm` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
+`/kit:brainstorm` · `/kit:budget` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:ledger` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
+
+Each command declares a **tier** (LIGHT / MEDIUM / HEAVY) in its frontmatter. MEDIUM and HEAVY commands render an approval gate listing planned agents, skills, estimated token range, and lighter alternatives before they dispatch. LIGHT commands run directly. See the [Approval-first by design](#approval-first-by-design) section below.
 
 ### Subagent roster
 
@@ -83,13 +85,47 @@ Skills register under the `kit:` namespace (Claude Code's Skill tool resolves th
 - **Backend / Python:** `kit:fastapi-expert`, `kit:sqlalchemy-expert`, `kit:python-patterns`, `kit:api-patterns`, `kit:database-design`
 - **LLM / AI:** `kit:llm-observability`, `kit:mcp-builder`
 - **Frontend:** `kit:frontend-design`, `kit:web-design-guidelines`, `kit:tailwind-patterns`, `kit:nextjs-react-expert`, `kit:mobile-design`
-- **Workflow:** `kit:socratic-gate`, `kit:plan-writing`, `kit:parallel-agents`, `kit:intelligent-routing`, `kit:behavioral-modes`
+- **Workflow:** `kit:socratic-gate`, `kit:approval-gate`, `kit:plan-writing`, `kit:parallel-agents`, `kit:intelligent-routing`, `kit:behavioral-modes`
 - **Security:** `kit:vulnerability-scanner`, `kit:red-team-tactics`
 - **Ops:** `kit:deployment-procedures`, `kit:server-management`, `kit:performance-profiling`
 
 Full list: [`skills/`](skills/). Run `/kit:help` (coming in v0.3.0) to list everything live.
 
 > **Convention:** in docs and responses, user-facing references to kit primitives should always carry the `kit:` prefix — so users instantly recognize which capability came from this plugin vs. Claude Code built-ins or other plugins.
+
+---
+
+## Approval-first by design
+
+Most Claude Code Kit users are on the **$20 Pro plan**, where weekly rate limits matter. The kit is built so a `/kit:*` command never silently fans out a fleet of agents on your tokens.
+
+**Tiers**
+
+| Tier | Behaviour | Examples |
+|---|---|---|
+| **LIGHT** | Runs directly — no gate. | `/kit:status`, `/kit:preview`, `/kit:budget`, `/kit:ledger` |
+| **MEDIUM** | One-line preview + `y/n/tweak` prompt. | `/kit:debug`, `/kit:plan`, `/kit:brainstorm`, `/kit:test <target>` |
+| **HEAVY** | Full gate — agents, skills, estimated tokens, MoSCoW scope, **alternatives** (always at least one lighter path). | `/kit:create`, `/kit:enhance`, `/kit:deploy`, `/kit:orchestrate`, `/kit:ui-ux-pro-max` |
+
+Power users can pass `--yes` or `-y` as the first argument to bypass any gate. The usage log still fires.
+
+**Usage log — `.kit/usage.json`**
+
+Every run (gated, bypassed, or cancelled) appends one entry to `.kit/usage.json` in the project root (gitignored). Read it via `/kit:ledger`:
+
+- `/kit:ledger weekly` — ISO-week totals by tier, top agents, top skills, cancellations
+- `/kit:ledger by-agent` / `by-skill` / `by-tier` — ranked aggregations
+- `/kit:ledger command /kit:enhance` — per-command tier drift
+- `/kit:ledger roi` — useful/wasted/partial ratios (only from runs **you** tag)
+- `/kit:ledger verdict <id> useful|wasted|partial` — tag runs after the fact
+
+**Honesty contract:** every token number is prefixed `~` (approximate, derived from response sizes, not Anthropic billing). No dollar conversion, ever. We never fabricate remaining-quota or reset-timestamp numbers — Claude Code doesn't expose them, so we don't invent them.
+
+**Optional budget file — `~/.kit/budget.json`**
+
+Set once with `/kit:budget low|medium|ok` and it enriches the HEAVY gate with a budget line and a smarter default alternative. If you never run `/kit:budget`, nothing changes — the feature is invisible until you opt in. Fully local, fully deletable (`/kit:budget clear` or `rm ~/.kit/budget.json`).
+
+Design stance from [`agents/product-manager.md`](agents/product-manager.md) + [`agents/product-owner.md`](agents/product-owner.md): **"Build the right thing, on the user's budget, with the user's consent."**
 
 ---
 
