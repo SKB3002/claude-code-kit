@@ -196,47 +196,155 @@ We **can't** know the user's real reset timestamp, so:
 
 ---
 
-## 6. Post-run ledger
+## 6. Post-run ledger + persistent usage tracking
 
-After every gated command, emit:
+Every `/kit:*` invocation — gated or not — appends one entry to a single project-scoped JSON file. That file is the source of truth for everything the user wants to understand about their kit spend in this repo.
+
+### 6.1 The file: `.kit/usage.json`
+
+- **Location:** project root, auto-created on first run. Not home-scoped — each repo gets its own usage history because "how much did I burn on *this* side project" is what people actually want to know.
+- **Gitignored.** Never committed, never leaves the machine, never sent to Anthropic or anyone else.
+- **Single JSON, append-only `runs` array.** Aggregates are computed on read, never cached, so we don't fight bugs where the aggregates drift from the raw data.
+- **Self-explaining.** The file starts with a `_doc` key describing the schema so a user opening it in any editor understands it without reading our docs.
+
+### 6.2 Schema
+
+```json
+{
+  "_doc": "Claude Code Kit usage log. Approximate token counts (derived from response sizes, NOT Anthropic billing). Safe to delete at any time. See /kit:ledger.",
+  "version": 1,
+  "created_at": "2026-04-19T10:12:00Z",
+  "runs": [
+    {
+      "id": "r_2026-04-19_001",
+      "started_at": "2026-04-19T14:22:03Z",
+      "ended_at": "2026-04-19T14:28:55Z",
+      "duration_seconds": 412,
+      "command": "/kit:create",
+      "args": "todo app with auth",
+      "tier_declared": "HEAVY",
+      "tier_observed": "HEAVY",
+      "approved": true,
+      "chosen_alternative": "a",
+      "agents": [
+        { "name": "kit:project-planner",      "approx_tokens": 18000 },
+        { "name": "kit:frontend-specialist",  "approx_tokens": 34000 },
+        { "name": "kit:backend-specialist",   "approx_tokens": 26000 },
+        { "name": "kit:devops-engineer",      "approx_tokens": 0, "skipped": true }
+      ],
+      "skills": [
+        "kit:app-builder", "kit:socratic-gate", "kit:plan-writing",
+        "kit:nextjs-react-expert", "kit:database-design"
+      ],
+      "files_written": 23,
+      "files_changed": 4,
+      "approx_total_tokens": 145000,
+      "user_verdict": null,
+      "notes": null
+    }
+  ]
+}
+```
+
+Every entry carries date, command, tier (declared + observed), agents with per-agent approximate tokens, skills, files touched, and an open slot for the user's later verdict. No aggregates in the file itself — they're derived.
+
+### 6.3 How tokens get estimated
+
+Claude Code does not expose real billing numbers to plugins. We approximate using character count of each `Agent(subagent_type=...)` response body divided by 4 (rough chars-per-token), plus a fixed overhead per tool-call round. This is documented in `skills/approval-gate/tiers.md` with the exact formula and a worked example, so users can sanity-check and contribute corrections.
+
+**Honesty displays:**
+- Every token number shown to the user is prefixed with `~`
+- The schema `_doc` says "approximate"
+- `/kit:ledger` header says "approximate; not Anthropic billing"
+- `/kit:help usage` explains the formula
+
+We never round in a way that looks authoritative. `~145,000` not `145,217`.
+
+### 6.4 The inline ledger (prints right after a command finishes)
 
 ```
 📒  /kit:create ledger
-
 Ran: 4 of 5 planned agents (kit:devops-engineer skipped — deploy cancelled)
-Skills consumed: kit:app-builder, kit:socratic-gate, kit:plan-writing,
-                 kit:nextjs-react-expert, kit:database-design
+Skills: kit:app-builder, kit:socratic-gate, kit:plan-writing, kit:nextjs-react-expert, kit:database-design
 Files written: 23
-Approximate token share (from turn output):
-  kit:project-planner     22%
-  kit:frontend-specialist 41%
-  kit:backend-specialist  31%
-  other (tooling, reads)   6%
-
-Tier predicted: HEAVY (80k–200k)
-Tier observed:  ~145k (in-tier ✓)
-
-Worth it? — you now have: scaffolded Next.js + FastAPI + Postgres schema
-with auth, ready to run. Deploy deferred.
-
-Next suggested step: /kit:preview start   (LIGHT)
+Approximate token share:
+  kit:project-planner     22%   (~18k)
+  kit:frontend-specialist 41%   (~34k)
+  kit:backend-specialist  31%   (~26k)
+  other (tooling, reads)   6%   (~5k)
+Tier declared: HEAVY (80k–200k) · observed: ~145k (in-tier ✓) · duration: 6m 52s
+Logged to .kit/usage.json (r_2026-04-19_001)
+Worth it? — you now have a scaffolded Next.js + FastAPI + Postgres app with auth.
+    Run `/kit:ledger verdict r_2026-04-19_001 useful` later if this was worth the spend.
+Next suggested: /kit:preview start (LIGHT)
 ```
 
-### 6.1 Where the numbers come from
-
-- Agent count, skills list, files written — all known from our own dispatch logs (we control the flow).
-- Token share — estimated from the length of each agent's Agent-tool response, not from a hidden meter. We say "approximate" and mean it.
-- Tier-predicted vs observed — lets users see when a command systematically under/over-estimates, so they can file an issue with data.
-
-### 6.2 `/kit:ledger` command (new, LIGHT)
+### 6.5 `/kit:ledger` command (new, LIGHT) — all views read `.kit/usage.json`
 
 ```
-/kit:ledger              — last 5 runs
-/kit:ledger <command>    — last 5 runs of a specific command
-/kit:ledger clear        — wipe local history
+/kit:ledger                              — last 5 runs, most recent first
+/kit:ledger weekly                       — current ISO week summary, totals by tier + by command
+/kit:ledger week <YYYY-Www>              — specific ISO week (e.g. 2026-W16)
+/kit:ledger by-agent                     — ranked agents across all history with total ~tokens + run count
+/kit:ledger by-skill                     — ranked skills same way
+/kit:ledger by-tier                      — totals for LIGHT / MEDIUM / HEAVY
+/kit:ledger command <name>               — last 10 runs of one command + per-run drift from tier
+/kit:ledger roi                          — ROI view, see §6.6
+/kit:ledger verdict <id> <useful|wasted|partial> [note]
+                                         — tag a specific run after the fact
+/kit:ledger clear                        — wipe .kit/usage.json (confirmation required)
 ```
 
-Reads from `.kit/ledger/*.json` (gitignored). Opt-in: first gated run asks the user if they want local ledgers. We never log outside the project directory.
+Retention: keep everything indefinitely by default. File is pure text, tiny, and the user can `clear` whenever. No automatic rotation — rotating without asking is exactly the kind of silent behaviour we're trying to avoid.
+
+### 6.6 Weekly view example
+
+```
+📅  /kit:ledger weekly — 2026-W16 (Apr 13–19)
+
+Runs: 34 total
+  LIGHT   18 (52%)  — ~62k tokens · avg ~3.4k
+  MEDIUM  11 (32%)  — ~310k tokens · avg ~28k
+  HEAVY    5 (14%)  — ~720k tokens · avg ~144k
+
+Top agents (by ~tokens): frontend-specialist (28%), project-planner (19%), debugger (14%)
+Top skills: socratic-gate (used 21x), plan-writing (12x), nextjs-react-expert (9x)
+
+Cancelled at gate: 3 runs (~estimated saved: ~350k tokens)
+Tier drift: 2 runs exceeded declared tier (both /kit:enhance → consider raising to HEAVY)
+
+Compared to last week (2026-W15): +12% total spend, +4 HEAVY runs.
+```
+
+### 6.7 ROI — honest framing
+
+Real ROI needs a "value" number only the user can provide. We do not fabricate one. `/kit:ledger roi` shows what we actually know:
+
+```
+💰  /kit:ledger roi (all time in this project)
+
+Total approximate tokens: ~1.9M across 128 runs since 2026-04-12
+Runs you tagged "useful":    94  (73%) — ~1.3M tokens
+Runs you tagged "wasted":     8  ( 6%) — ~180k tokens
+Runs you tagged "partial":   11  ( 9%) — ~220k tokens
+Untagged:                    15  (12%) — ~200k tokens
+
+Most-useful-per-token command:  /kit:debug       (92% useful, avg ~18k)
+Least-useful-per-token command: /kit:ui-ux-pro-max (40% useful, avg ~210k)
+Most-cancelled-at-gate:         /kit:create      (4 cancels in 9 approvals = caution flag)
+
+Interpretation is yours. We don't assign dollar values or suggest you should
+stop using a command. This is raw signal, not a verdict.
+```
+
+The "useful / wasted / partial" verdicts come from the user running `/kit:ledger verdict r_2026-04-19_001 useful` — never auto-assigned. Untagged runs stay untagged.
+
+### 6.8 Privacy + deletability
+
+- File lives only in the project dir
+- No network calls, ever
+- `.gitignore` entry added in Phase 1e so it's never accidentally committed
+- `/kit:ledger clear` wipes it with one command; the user can also just `rm .kit/usage.json` — we document this explicitly so the user knows the escape hatch is trivial
 
 ---
 
@@ -310,17 +418,13 @@ Then resume existing plan from Phase 2 (`/kit:help`), Phase 3, etc.
 
 ---
 
-## 11. Open questions — please answer before I implement
+## 11. Decisions (confirmed by user)
 
-1. **Budget file location.** `.kit/budget.json` in the project root, or `~/.kit/budget.json` in the user's home? Home-level is better for "same preference across projects"; project-level is better for "this is a work repo, different budget." Default proposal: **home-level** with optional project-level override.
-
-2. **Ledger retention.** How many past runs should `/kit:ledger` keep by default? 5? 20? Unlimited until the user runs `clear`? Default proposal: **20**.
-
-3. **`--yes` bypass on HEAVY.** Should `--yes` work on HEAVY commands at all, or only skip the LIGHT/MEDIUM gate? Default proposal: **yes, it works on HEAVY too** — it's a power-user flag and we trust the user to know what they're doing. Document the risk.
-
-4. **Release packaging.** Ship everything (discoverability + approval economy) as v0.3.0, or split: v0.3.0 = discoverability, v0.3.1 = approval economy? Default proposal: **ship together as v0.3.0** — the approval gate is what makes Agent Dispatch actually shippable in the first place.
-
-5. **Does the approval-gate skill need its own agent?** Or is it pure skill + gate rendered by the calling command? Default proposal: **pure skill** — no new agent — keeps the 20-agent roster stable.
+1. **Budget file location:** `~/.kit/budget.json` (home-level) with optional project-level `.kit/budget.json` override.
+2. **Usage-log file location:** `.kit/usage.json` in the **project root**, always — per-repo history is the point. Retention: unlimited until the user runs `/kit:ledger clear`.
+3. **`--yes` / `-y` bypass:** works on all tiers including HEAVY. Documented with risk note. Rationale: power-user flag, same convention as `apt -y` / `npm --yes`; kit still logs the run to `.kit/usage.json` so nothing is invisible.
+4. **Release packaging:** ship discoverability + approval economy + usage tracking as a single **v0.3.0**.
+5. **Approval-gate architecture:** pure skill ([skills/approval-gate/SKILL.md](../skills/approval-gate/SKILL.md)) — no new agent. Keeps the 20-agent roster stable and the gate feels like a property of the command, not a new character in the cast.
 
 ---
 
