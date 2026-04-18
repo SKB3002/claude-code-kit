@@ -1,6 +1,10 @@
 ---
 description: Create a new application. Triggers the app-builder skill and coordinates project-planner, database-architect, backend-specialist, and frontend-specialist.
 argument-hint: <what to build>
+tier: HEAVY
+tier-rationale: Dispatches 4–5 agents (planner + db + backend + frontend + optional devops), scaffolds 15–40 files.
+estimated-tokens: "80k–200k"
+risk: Balloons if auth provider / hosting / db flavour isn't specified — expect clarifying round-trips.
 ---
 
 # /create — New Application

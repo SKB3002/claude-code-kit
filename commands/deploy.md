@@ -1,6 +1,10 @@
 ---
 description: Production deployment with pre-flight checks, deploy execution, and verification.
 argument-hint: [check|preview|production|rollback]
+tier: HEAVY
+tier-rationale: Pre-flight + deploy + verify via devops-engineer; external side effects (pushes, build runs).
+estimated-tokens: "40k–100k"
+risk: Rollbacks or failing health checks trigger additional agent rounds; also HEAVY has real-world blast radius beyond tokens.
 ---
 
 # /deploy — Production Deployment

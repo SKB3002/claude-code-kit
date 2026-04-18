@@ -1,6 +1,10 @@
 ---
 description: Create a project plan using the project-planner agent. No code — only plan file generation.
 argument-hint: <what to plan>
+tier: MEDIUM
+tier-rationale: One agent (project-planner), writes a single docs/PLAN-*.md, no code changes.
+estimated-tokens: "20k–50k"
+risk: Plans for large multi-phase initiatives can approach HEAVY if the planner pulls in many file reads.
 ---
 
 # /plan — Project Planning Mode

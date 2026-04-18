@@ -1,6 +1,10 @@
 ---
 description: Start, stop, or check the local dev / preview server.
 argument-hint: [start|stop|restart|check]
+tier: LIGHT
+tier-rationale: Process management only — no agents, runs a single background command.
+estimated-tokens: "2k–8k"
+risk: None at this tier; if the dev server itself is costly to start that's outside our scope.
 ---
 
 # /preview — Local Preview Management

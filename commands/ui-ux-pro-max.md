@@ -1,6 +1,10 @@
 ---
 description: Comprehensive UI/UX design workflow — styles, color palettes, typography, UX guidelines, and stack-specific patterns.
 argument-hint: <what to design>
+tier: HEAVY
+tier-rationale: frontend-specialist + 3 design skills (frontend-design, web-design-guidelines, tailwind-patterns); comprehensive output, many component writes.
+estimated-tokens: "60k–180k"
+risk: Full-product design passes (whole app theming) can exceed the upper bound; scope tightly or chunk.
 ---
 
 # /ui-ux-pro-max — AI-Powered Design Intelligence

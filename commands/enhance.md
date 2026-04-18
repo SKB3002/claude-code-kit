@@ -1,6 +1,10 @@
 ---
 description: Add or update features in an existing application. Iterative development mode.
 argument-hint: <change to make>
+tier: HEAVY
+tier-rationale: Typically 2–3 specialists depending on scope (frontend + backend, or + db), writes multiple files.
+estimated-tokens: "50k–150k"
+risk: Cross-cutting changes (auth, schema rename) pull in more agents and exceed upper bound.
 ---
 
 # /enhance — Update Application

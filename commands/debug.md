@@ -1,6 +1,10 @@
 ---
 description: Systematic debugging. Activates DEBUG mode for methodical problem investigation.
 argument-hint: <symptom or error>
+tier: MEDIUM
+tier-rationale: Single debugger agent + systematic-debugging skill; reads files, writes 0–2 fixes.
+estimated-tokens: "15k–40k"
+risk: Cross-layer bugs (frontend ↔ backend) can pull in a second specialist and push toward HEAVY.
 ---
 
 # /debug — Systematic Problem Investigation

@@ -1,6 +1,10 @@
 ---
 description: Generate tests, run existing tests, or show coverage. Stack-aware (pytest, Jest, Vitest, etc.).
 argument-hint: [target|coverage|watch]
+tier: MEDIUM
+tier-rationale: Single test-engineer agent; may write 1–5 test files or just run existing suite.
+estimated-tokens: "15k–60k"
+risk: Generating tests from scratch for a large module pulls many file reads and can drift toward HEAVY.
 ---
 
 # /test — Test Generation & Execution

@@ -1,6 +1,10 @@
 ---
 description: Structured brainstorming for projects and features. Explores multiple options before implementation.
 argument-hint: <topic to brainstorm>
+tier: MEDIUM
+tier-rationale: Socratic questioning with the user — usually 1–2 agent rounds, no file writes.
+estimated-tokens: "10k–30k"
+risk: Scope creep if the user keeps adding requirements mid-brainstorm; can drift toward HEAVY.
 ---
 
 # /brainstorm — Structured Idea Exploration

@@ -1,6 +1,10 @@
 ---
 description: Display current project state — tech stack, completed features, pending work, preview status.
 argument-hint: ""
+tier: LIGHT
+tier-rationale: Read-only snapshot; globs project files, no agents dispatched, no writes.
+estimated-tokens: "3k–10k"
+risk: Very large repos with many config files can push file reads higher, but rarely drifts out of LIGHT.
 ---
 
 # /status — Project Status
