@@ -1,6 +1,6 @@
 # Claude Code Kit
 
-> A comprehensive Claude Code plugin that ships **20 specialist subagents**, **41 skills**, and **13 slash commands** — adapted from [antigravity-kit](https://github.com/vudovn/antigravity-kit) for the Claude Code ecosystem.
+> A comprehensive Claude Code plugin that ships **20 specialist subagents**, **41 skills**, and **14 slash commands** — adapted from [antigravity-kit](https://github.com/vudovn/antigravity-kit) for the Claude Code ecosystem.
 
 Claude Code Kit gives your Claude Code sessions an instant upgrade: domain experts that activate automatically, deep knowledge modules loaded on demand, and workflow commands that orchestrate entire feature builds. Built to augment Claude Code's native features — never to shadow them.
 
@@ -55,7 +55,7 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 |---|---|---|
 | Subagents | 20 | [`agents/`](agents/) |
 | Skills | 41 | [`skills/`](skills/) |
-| Slash commands | 13 | [`commands/`](commands/) |
+| Slash commands | 14 | [`commands/`](commands/) |
 | Validation scripts | 16 | `skills/<skill>/scripts/` (co-located with the skill) |
 | MCP servers | 5 pre-validated, opt-in | [`.mcp.example.json`](.mcp.example.json) + [`mcp-servers.md`](mcp-servers.md) |
 | Hooks | opt-in scaffold | [`hooks/`](hooks/) |
@@ -64,7 +64,9 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 
 All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>`. **Always invoke with the `/kit:` prefix** so it's clear the command is from this kit (and won't collide with built-ins or other plugins):
 
-`/kit:brainstorm` · `/kit:budget` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:ledger` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
+`/kit:brainstorm` · `/kit:budget` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:help` · `/kit:ledger` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
+
+Run `/kit:help` in any session to see the full command/agent/skill catalog, rendered live from the plugin's filesystem — counts, tiers, and estimated tokens self-update when primitives are added.
 
 Each command declares a **tier** (LIGHT / MEDIUM / HEAVY) in its frontmatter. MEDIUM and HEAVY commands render an approval gate listing planned agents, skills, estimated token range, and lighter alternatives before they dispatch. LIGHT commands run directly. See the [Approval-first by design](#approval-first-by-design) section below.
 
@@ -89,7 +91,7 @@ Skills register under the `kit:` namespace (Claude Code's Skill tool resolves th
 - **Security:** `kit:vulnerability-scanner`, `kit:red-team-tactics`
 - **Ops:** `kit:deployment-procedures`, `kit:server-management`, `kit:performance-profiling`
 
-Full list: [`skills/`](skills/). Run `/kit:help` (coming in v0.3.0) to list everything live.
+Full list: [`skills/`](skills/). Run `/kit:help skills` to list everything live.
 
 > **Convention:** in docs and responses, user-facing references to kit primitives should always carry the `kit:` prefix — so users instantly recognize which capability came from this plugin vs. Claude Code built-ins or other plugins.
 

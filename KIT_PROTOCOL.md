@@ -241,6 +241,7 @@ Claude Code doesn't have hard "modes"; slash commands replace them. The **Tier**
 | UI/UX | `/kit:ui-ux-pro-max <desc>` | HEAVY | `frontend-specialist` + design skills |
 | Budget | `/kit:budget [low\|medium\|ok\|clear]` | LIGHT | Opt-in budget file at `~/.kit/budget.json` |
 | Ledger | `/kit:ledger [weekly\|by-agent\|roi\|…]` | LIGHT | Read-only views over `.kit/usage.json` |
+| Help   | `/kit:help [commands\|agents\|skills\|<name>]` | LIGHT | Live capability index — reads frontmatter from the plugin filesystem |
 
 **Plan mode (4-phase):**
 
