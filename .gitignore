@@ -37,3 +37,6 @@ desktop.ini
 dist/
 build/
 *.log
+
+# Kit runtime state (usage log + optional budget file)
+.kit/
