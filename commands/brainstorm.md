@@ -11,7 +11,7 @@ $ARGUMENTS
 
 ## Purpose
 
-Activate brainstorm mode to explore options **before** committing to an implementation. Load the `brainstorming` skill for detailed protocols.
+Activate brainstorm mode to explore options **before** committing to an implementation. Load the `socratic-gate` skill for detailed protocols.
 
 ---
 

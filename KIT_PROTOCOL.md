@@ -161,7 +161,7 @@ Protocol:
 1. **Never assume.** If even 1% is unclear, ask.
 2. **Spec-heavy requests.** When the user gives a numbered list, don't skip the gate — ask about trade-offs or edge cases before starting.
 3. **Wait.** Do not invoke sub-agents or write code until the user clears the gate.
-4. **Reference.** Full protocol in [skills/brainstorming/SKILL.md](skills/brainstorming/SKILL.md).
+4. **Reference.** Full protocol in [skills/socratic-gate/SKILL.md](skills/socratic-gate/SKILL.md).
 
 ### Final-checklist protocol
 
@@ -280,7 +280,7 @@ For design work: open and read the agent file. The rules are there.
 - **Backend / Python**: `fastapi-expert`, `sqlalchemy-expert`, `python-patterns`, `api-patterns`, `database-design`
 - **LLM**: `llm-observability`, `mcp-builder`
 - **Frontend**: `frontend-design`, `web-design-guidelines`, `tailwind-patterns`, `nextjs-react-expert`, `mobile-design`
-- **Workflow**: `brainstorming`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
+- **Workflow**: `socratic-gate`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
 
 ---
 

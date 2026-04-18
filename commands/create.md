@@ -17,7 +17,7 @@ Start a new application from a natural-language request.
 
 1. **Request analysis**
    - Understand what the user wants
-   - If information is missing, invoke the `brainstorming` skill to ask
+   - If information is missing, invoke the `socratic-gate` skill to ask
 
 2. **Project planning**
    - Invoke the `project-planner` agent for task breakdown

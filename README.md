@@ -62,28 +62,34 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 
 ### Slash commands
 
-All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>` (or use your own alias):
+All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>`. **Always invoke with the `/kit:` prefix** so it's clear the command is from this kit (and won't collide with built-ins or other plugins):
 
-`brainstorm` · `create` · `debug` · `deploy` · `enhance` · `orchestrate` · `plan` · `preview` · `status` · `test` · `ui-ux-pro-max`
+`/kit:brainstorm` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
 
 ### Subagent roster
 
-**Architects / leads:** `orchestrator` · `project-planner` · `product-owner` · `product-manager` · `code-archaeologist`
-**Backend / data / infra:** `backend-specialist` · `database-architect` · `devops-engineer` · `security-auditor` · `penetration-tester` · `performance-optimizer`
-**Frontend / UX:** `frontend-specialist` · `mobile-developer` · `seo-specialist` · `game-developer`
-**Quality / ops:** `debugger` · `test-engineer` · `qa-automation-engineer` · `documentation-writer` · `explorer-agent`
+Dispatch via `Agent(subagent_type="kit:<name>")`. All 20 subagents are namespaced with the `kit:` prefix:
+
+**Architects / leads:** `kit:orchestrator` · `kit:project-planner` · `kit:product-owner` · `kit:product-manager` · `kit:code-archaeologist`
+**Backend / data / infra:** `kit:backend-specialist` · `kit:database-architect` · `kit:devops-engineer` · `kit:security-auditor` · `kit:penetration-tester` · `kit:performance-optimizer`
+**Frontend / UX:** `kit:frontend-specialist` · `kit:mobile-developer` · `kit:seo-specialist` · `kit:game-developer`
+**Quality / ops:** `kit:debugger` · `kit:test-engineer` · `kit:qa-automation-engineer` · `kit:documentation-writer` · `kit:explorer-agent`
 
 ### Highlighted skills
 
-- **Cross-stack quality:** `clean-code`, `lint-and-validate`, `testing-patterns`, `tdd-workflow`, `systematic-debugging`, `code-review-checklist`
-- **Backend / Python:** `fastapi-expert`, `sqlalchemy-expert`, `python-patterns`, `api-patterns`, `database-design`
-- **LLM / AI:** `llm-observability`, `mcp-builder`
-- **Frontend:** `frontend-design`, `web-design-guidelines`, `tailwind-patterns`, `nextjs-react-expert`, `mobile-design`
-- **Workflow:** `brainstorming`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
-- **Security:** `vulnerability-scanner`, `red-team-tactics`
-- **Ops:** `deployment-procedures`, `server-management`, `performance-profiling`
+Skills register under the `kit:` namespace (Claude Code's Skill tool resolves them as `kit:<name>`):
 
-Full list: [`skills/`](skills/)
+- **Cross-stack quality:** `kit:clean-code`, `kit:lint-and-validate`, `kit:testing-patterns`, `kit:tdd-workflow`, `kit:systematic-debugging`, `kit:code-review-checklist`
+- **Backend / Python:** `kit:fastapi-expert`, `kit:sqlalchemy-expert`, `kit:python-patterns`, `kit:api-patterns`, `kit:database-design`
+- **LLM / AI:** `kit:llm-observability`, `kit:mcp-builder`
+- **Frontend:** `kit:frontend-design`, `kit:web-design-guidelines`, `kit:tailwind-patterns`, `kit:nextjs-react-expert`, `kit:mobile-design`
+- **Workflow:** `kit:socratic-gate`, `kit:plan-writing`, `kit:parallel-agents`, `kit:intelligent-routing`, `kit:behavioral-modes`
+- **Security:** `kit:vulnerability-scanner`, `kit:red-team-tactics`
+- **Ops:** `kit:deployment-procedures`, `kit:server-management`, `kit:performance-profiling`
+
+Full list: [`skills/`](skills/). Run `/kit:help` (coming in v0.3.0) to list everything live.
+
+> **Convention:** in docs and responses, user-facing references to kit primitives should always carry the `kit:` prefix — so users instantly recognize which capability came from this plugin vs. Claude Code built-ins or other plugins.
 
 ---
 

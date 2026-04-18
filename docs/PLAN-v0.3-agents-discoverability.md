@@ -107,6 +107,16 @@ argument-hint: [commands|agents|skills|<name>]
 
 `/kit:help` is **not** a static markdown listing. It instructs Claude to glob our folders and render live content, so it self-updates when we add primitives. We never manually sync a "list of commands" doc — the live filesystem is the source of truth.
 
+### Prefix-visibility rule (MANDATORY for all rendering)
+
+Every primitive `/kit:help` prints — command, agent, or skill — must carry the `kit:` prefix in the rendered output:
+
+- Commands: `/kit:<name>` (never bare `<name>`)
+- Agents: `kit:<name>` (since that's the `subagent_type` used to dispatch)
+- Skills: `kit:<name>` (matches the Skill-tool catalog handle)
+
+**Why:** users should never have to guess whether a capability came from our kit, a Claude Code built-in, or another plugin. The prefix is free provenance. This rule also applies to README, CHANGELOG, agent `description:` fields when they reference kit primitives, and any future user-facing surface.
+
 Pseudo-flow the command file will encode:
 
 ```
