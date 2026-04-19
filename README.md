@@ -27,6 +27,8 @@ This kit gives you a curated, MIT-licensed starting point. Install it, tweak it,
 3. Paste: `https://github.com/SKB3002/claude-code-kit`
 4. Enable the `kit` plugin → **Reload Window**
 
+> **To update:** go to **Manage Plugins → Marketplace** (not the Plugins section) and click Update next to `claude-code-kit`.
+
 ### Option 2 — Claude Code CLI marketplace
 
 ```bash
