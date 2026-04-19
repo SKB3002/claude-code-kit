@@ -254,7 +254,45 @@ Single-file fix? Skip the plan and just edit. Structural change? Create the plan
 
 ---
 
-## 6. TIER 2 — Design Rules (reference)
+## 6. `KIT_HOOK_PROFILE` — Agent-layer hook intensity
+
+This is a **contract Claude reads**, not a Claude Code hook registration. When the env var `KIT_HOOK_PROFILE` is set, Claude runs the matching validation scripts at the moments specified below, on behalf of the user. `hooks/hooks.json` still ships empty — this protocol runs alongside, not through, the hook loader.
+
+### Profiles
+
+| Profile | Contract |
+|---|---|
+| `off` (default; var unset or invalid) | Do nothing. The user is running hook-free — respect that. |
+| `minimal`  | After every `Edit` / `Write` / `MultiEdit`: run `lint_runner.py` on the touched file. |
+| `standard` | `minimal` + after every `Edit` / `Write`: run `security_scan.py` on the touched file. At session `Stop` (final assistant turn): run `test_runner.py --summary`. |
+| `strict`   | `standard` + before every `Bash` tool call: run `security_scan.py --pre-bash` (warn-only — never block the call). After edits to `schema.*` / `models/` files: run `schema_validator.py`. After edits to `routes/` / `app/api/` files: run `api_validator.py`. |
+
+Scripts referenced:
+```
+python ${CLAUDE_PLUGIN_ROOT}/skills/lint-and-validate/scripts/lint_runner.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/vulnerability-scanner/scripts/security_scan.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/testing-patterns/scripts/test_runner.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/database-design/scripts/schema_validator.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/api-patterns/scripts/api_validator.py
+```
+
+### Operating rules
+
+1. **Read the env var once at session start.** If it's one of `minimal` / `standard` / `strict`, activate the profile. Anything else → `off`, silently.
+2. **Surface the script output to the user.** Never hide a failing lint or security result. If `security_scan.py` flags a high-severity issue on a write, stop and report before proceeding.
+3. **Warn-only for `strict` pre-Bash.** `strict` does not block Bash calls — it runs the pre-check, surfaces warnings, and the user or the next tool call decides. Blocking Bash via agent-layer contract is unreliable; for real blocking, use actual Claude Code hooks from `hooks/hooks.example.json`.
+4. **Document the active profile once per session.** The first time a profile-driven script runs, tell the user: `ℹ️  KIT_HOOK_PROFILE=<level> — running <script> after <event>.` Afterward, silent.
+5. **Opt-out is always one step away.** If the user finds the profile noisy, they `unset KIT_HOOK_PROFILE` and relaunch — no cleanup needed, nothing persists on disk.
+
+### When to prefer real hooks instead
+
+The agent-layer contract depends on Claude remembering this section through context compaction. If you need deterministic "this script MUST run on every Edit, no matter what," copy the matching entry from [`hooks/hooks.example.json`](hooks/hooks.example.json) into `hooks/hooks.json`. Real hooks are Claude-Code-level and don't drift with context.
+
+See [`hooks/profiles/README.md`](hooks/profiles/README.md) for the user-facing setup guide.
+
+---
+
+## 7. TIER 2 — Design Rules (reference)
 
 Design rules live in the specialist agents, not here.
 
@@ -274,7 +312,7 @@ For design work: open and read the agent file. The rules are there.
 
 ---
 
-## 7. Quick reference
+## 8. Quick reference
 
 ### Agent roster (20)
 
@@ -308,7 +346,7 @@ For design work: open and read the agent file. The rules are there.
 
 ---
 
-## 8. What the kit does NOT do
+## 9. What the kit does NOT do
 
 - It does not auto-run lint, tests, or scans — those are opt-in via [hooks/README.md](hooks/README.md).
 - It does not auto-spawn MCP servers — those are opt-in via [mcp-servers.md](mcp-servers.md).
@@ -317,6 +355,6 @@ For design work: open and read the agent file. The rules are there.
 
 ---
 
-## 9. Attribution
+## 10. Attribution
 
 Originally designed as `GEMINI.md` for the Antigravity Kit by **VUDOVN** (MIT). Adapted for Claude Code under the same MIT license. See [LICENSE](LICENSE).
