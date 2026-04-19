@@ -344,6 +344,7 @@ The "useful / wasted / partial" verdicts come from the user running `/kit:ledger
 - File lives only in the project dir
 - No network calls, ever
 - `.gitignore` entry added in Phase 1e so it's never accidentally committed
+
 - `/kit:ledger clear` wipes it with one command; the user can also just `rm .kit/usage.json` — we document this explicitly so the user knows the escape hatch is trivial
 
 ---
@@ -351,6 +352,7 @@ The "useful / wasted / partial" verdicts come from the user running `/kit:ledger
 ## 7. How this changes the v0.3 plan
 
 The existing [PLAN-v0.3-agents-discoverability.md](PLAN-v0.3-agents-discoverability.md) needs these edits:
+
 
 1. **Pillar 2 rename.** "Automatic Agent Dispatch" → "Approval-First Agent Dispatch." Every command that previously described its agents now *proposes* them via the gate defined here.
 2. **Phase 1 redo.** The 8-command rewrite now has two deliverables per command: (a) real `Agent(subagent_type=…)` wiring, (b) the gate metadata in frontmatter (`tier`, `tier-rationale`, `estimated-tokens`).
