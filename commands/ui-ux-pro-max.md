@@ -1,70 +1,143 @@
 ---
 description: Comprehensive UI/UX design workflow — styles, color palettes, typography, UX guidelines, and stack-specific patterns.
 argument-hint: <what to design>
+tier: HEAVY
+tier-rationale: frontend-specialist + 3 design skills (frontend-design, web-design-guidelines, tailwind-patterns); comprehensive output, many component writes.
+estimated-tokens: "60k–180k"
+risk: Full-product design passes (whole app theming) can exceed the upper bound; scope tightly or chunk.
 ---
 
-# /ui-ux-pro-max — AI-Powered Design Intelligence
+# /kit:ui-ux-pro-max — AI-Powered Design Intelligence
 
 $ARGUMENTS
 
----
-
-## Purpose
-
-Comprehensive design guide for web and mobile applications. Synthesizes styles, color palettes, font pairings, UX guidelines, and chart types across multiple stacks.
-
-> **Note:** The original antigravity-kit shipped a search script with an indexed design database. Here we rely on the `frontend-design`, `web-design-guidelines`, and `tailwind-patterns` skills plus the `frontend-specialist` agent.
+> Comprehensive design guide for web and mobile applications. Synthesises styles, color palettes, font pairings, UX guidelines, and stack-specific patterns via `kit:frontend-specialist` + the three design skills.
 
 ---
 
-## Workflow
+## Flow
 
-### Step 1: Analyze Requirements
+**Step 1 — Parse bypass flag.**
+If `$ARGUMENTS` starts with `--yes` or `-y`, set `bypass = true` and strip the flag.
 
-Extract:
+**Step 2 — Load the approval-gate skill.**
+Read `skills/approval-gate/SKILL.md`.
 
-- **Product type**: SaaS, e-commerce, portfolio, dashboard, landing, etc.
-- **Style keywords**: minimal, playful, professional, elegant, dark mode
-- **Industry**: healthcare, fintech, gaming, education
-- **Stack**: React, Vue, Next.js, html-tailwind (default), Flutter, SwiftUI, Jetpack Compose, shadcn/ui
+**Step 3 — Analyse requirements (main-context, cheap).**
 
-### Step 2: Invoke `frontend-specialist`
+Before the gate, extract from `$ARGUMENTS`:
 
-Pass the requirements above. The agent will:
+- **Product type** — SaaS / e-commerce / portfolio / dashboard / landing / mobile onboarding / admin / other
+- **Style keywords** — minimal / playful / professional / elegant / dark-mode-first / ...
+- **Industry** — healthcare / fintech / gaming / education / ...
+- **Stack** — React / Vue / Next.js / Tailwind (default) / Flutter / SwiftUI / Jetpack Compose / shadcn-ui
+- **Scope** — single page / multi-page / full-product design system
 
-1. Load the `frontend-design` skill (design tokens, component patterns)
-2. Load the `web-design-guidelines` skill (accessibility, contrast rules)
-3. Load `tailwind-patterns` if the stack is Tailwind-based
-4. Propose a **complete design system**: pattern, style, colors, typography, effects
-5. List **anti-patterns** to avoid
+Grep the current repo for existing design tokens, Tailwind config, or a `design-system/` folder so we don't redesign what already exists.
 
-### Step 3: (Optional) Persist the Design System
+If essentials are unclear, ask 1–2 Socratic questions (e.g. "light-mode-first, dark-mode-first, or both?"). Never more than 2. Skip if `bypass`.
 
-If you want the system reusable across pages:
+**Step 4 — Build the agent plan.**
+
+- Primary agent: `kit:frontend-specialist`
+- Skills the agent will load: `kit:frontend-design`, `kit:web-design-guidelines`, `kit:tailwind-patterns` (if Tailwind), `kit:nextjs-react-expert` (if Next.js), `kit:mobile-design` (if Flutter/SwiftUI/Jetpack)
+- Second agent only if full-product scope: `kit:seo-specialist` for landing-page metadata and crawlability
+- Third agent only if accessibility-critical: no separate agent — the web-design-guidelines skill already covers WCAG. Don't over-staff.
+
+**Step 5 — Render the HEAVY gate (skip if `bypass`).**
 
 ```
-design-system/
-├── MASTER.md          — global source of truth
-└── pages/
-    ├── dashboard.md   — page-specific overrides
-    ├── checkout.md
-    └── …
+⚖️  Kit dispatch preview — /kit:ui-ux-pro-max
+
+Task: "<stripped args>"
+Interpreted: <product type> · <style> · <industry> · <stack> · scope: <single-page | multi-page | full-product>
+
+Planned agents (in order):
+  kit:frontend-specialist   — design system + component generation
+  kit:seo-specialist        — landing metadata + crawlability    [landing pages only]
+
+Planned skills: <from Step 4>
+
+Tier: HEAVY  (60k–180k tokens, ~4–10 min wall-clock)
+Why:  Comprehensive design pass with 3+ design skills and component generation for the chosen stack.
+Risk: Full-product theming (every page) can exceed the upper bound. Prefer to chunk: do one page / flow at a time.
+
+MoSCoW for this task:
+  MUST    — design tokens (colors, type, spacing), key components, accessibility baseline
+  SHOULD  — dark-mode variants, responsive breakpoints, hover/focus states, empty/loading/error states
+  COULD   — motion/transitions spec, iconography system, illustration guidelines
+  WON'T   — full brand identity / logo design, marketing copywriting
+
+Alternatives:
+  (a) Proceed as-is                                                   ~60k–180k
+  (b) Tokens + 1 key page only                                        ~25k–60k   (≈MEDIUM)
+  (c) Design-spec only: propose the system, no code, review before build  ~15k–35k  (≈MEDIUM)
+
+[if budget file present: budget line + recommendation]
+
+Reply:  go / a   — proceed full design pass
+        b        — tokens + one page
+        c        — design-spec only (review before implementing)
+        tweak    — edit stack / scope / style direction
+        cancel
 ```
 
-When building a specific page: first check `design-system/pages/<page>.md`. If absent, fall back to `MASTER.md`.
+Reply parsing per §3.4 of the approval-gate skill.
+On cancel: append cancelled-run entry, print `🚫 Cancelled. No design files written.` and stop.
 
-### Step 4: Implement
+**Step 6 — Dispatch.**
 
-The `frontend-specialist` generates components following the design system.
+```
+Agent(
+  subagent_type="kit:frontend-specialist",
+  description="Design: <short slice>",
+  prompt=<<
+    PROJECT: "$ARGUMENTS" (interpreted: <type>, <style>, <stack>, scope=<alt>)
+    TASK:
+    1. Load kit:frontend-design, kit:web-design-guidelines,
+       and the stack-specific skill (kit:tailwind-patterns / kit:nextjs-react-expert / kit:mobile-design).
+    2. Produce a complete design system for the chosen scope:
+       tokens (color, type, spacing, radius, shadow), components,
+       anti-patterns to avoid, and a Pre-Delivery Checklist tailored to this product.
+    3. Implement the MUSTs for this scope. Skip SHOULDs/COULDs if alternative = (b). Skip implementation entirely if alternative = (c).
+    4. Follow the 'Common Rules for Professional UI' at the bottom of the command file — they encode years of gotchas (no emoji icons, stable hover, light-mode contrast floors, etc.).
+    5. If a design-system/ folder exists or user wants it persistent, write:
+       design-system/MASTER.md + design-system/pages/<page>.md
+       so future work can reference a single source of truth.
+  >>
+)
+```
+
+If `scope = landing`, additionally dispatch `kit:seo-specialist` with a prompt to verify the metadata, heading structure, and crawlability of the landing output.
+
+**Step 7 — Append to the usage log** per §5 of the approval-gate skill.
+
+**Step 8 — Print the inline HEAVY ledger.**
+
+```
+📒  /kit:ui-ux-pro-max ledger
+Ran: <N> of <M> planned agents
+Skills: <list>
+Files written: <N>  (examples: design-system/MASTER.md, components/Button.tsx, app/layout.tsx, ...)
+Approximate token share:
+  kit:frontend-specialist  <N>%   (~<N>k)
+  kit:seo-specialist       <N>%   (~<N>k)   [if landing]
+  other                    <N>%   (~<N>k)
+Tier declared: HEAVY (60k–180k) · observed: ~<N>k (<in-tier ✓ | drift ✗>) · duration: <Xm Ys>
+Pre-delivery checklist: <PASS | N issues>
+Logged to .kit/usage.json (<run-id>)
+Worth it? — you now have: <1-sentence summary of design deliverables>.
+Next suggested: /kit:preview start   (LIGHT)   or   /kit:test <page>   (MEDIUM)
+```
 
 ---
 
-## Common Rules for Professional UI
+## Common Rules for Professional UI (inherited by the dispatched agent)
 
-### Icons & Visuals
+### Icons & visuals
 
 | Rule | Do | Don't |
-|------|----|----- |
+|---|---|---|
 | No emoji icons | SVG icons (Heroicons, Lucide, Simple Icons) | Emojis like 🎨 🚀 ⚙️ |
 | Stable hover states | Color/opacity transitions | Scale transforms that shift layout |
 | Correct brand logos | Official SVG from Simple Icons | Guessed paths |
@@ -73,15 +146,15 @@ The `frontend-specialist` generates components following the design system.
 ### Interaction
 
 | Rule | Do | Don't |
-|------|----|----- |
+|---|---|---|
 | `cursor-pointer` on clickables | Always | Default cursor on interactive elements |
 | Hover feedback | Color/shadow/border change | No indication |
 | Transitions | `transition-colors duration-200` | Instant or >500ms |
 
-### Light/Dark Mode
+### Light/dark mode
 
 | Rule | Do | Don't |
-|------|----|----- |
+|---|---|---|
 | Glass card light mode | `bg-white/80`+ | `bg-white/10` (too transparent) |
 | Light mode body text | `#0F172A` (slate-900) | `#94A3B8` (slate-400) |
 | Muted light text | `#475569` (slate-600) min | gray-400 or lighter |
@@ -90,16 +163,16 @@ The `frontend-specialist` generates components following the design system.
 ### Layout
 
 | Rule | Do | Don't |
-|------|----|----- |
+|---|---|---|
 | Floating navbar | `top-4 left-4 right-4` spacing | `top-0 left-0 right-0` |
 | Content padding | Offset for fixed navbar height | Content hidden behind fixed elements |
 | Max-width consistency | One of `max-w-6xl` / `max-w-7xl` | Random mixed widths |
 
 ---
 
-## Pre-Delivery Checklist
+## Pre-delivery checklist (run as part of Step 8)
 
-### Visual Quality
+### Visual quality
 - [ ] No emojis used as icons
 - [ ] All icons from one set (Heroicons / Lucide)
 - [ ] Brand logos verified from Simple Icons
@@ -111,9 +184,9 @@ The `frontend-specialist` generates components following the design system.
 - [ ] Transitions smooth (150–300ms)
 - [ ] Focus states visible for keyboard nav
 
-### Light/Dark Mode
-- [ ] Light mode text contrast ≥ 4.5:1
-- [ ] Glass / transparent elements visible in light
+### Light/dark mode
+- [ ] Light-mode text contrast ≥ 4.5:1
+- [ ] Glass / transparent elements visible in light mode
 - [ ] Borders visible in both modes
 - [ ] Both modes tested
 
@@ -134,10 +207,10 @@ The `frontend-specialist` generates components following the design system.
 ## Examples
 
 ```
-/ui-ux-pro-max landing page for a beauty spa
-/ui-ux-pro-max SaaS dashboard for fintech analytics
-/ui-ux-pro-max mobile onboarding for a fitness app
-/ui-ux-pro-max admin panel for a CRM with a minimal aesthetic
+/kit:ui-ux-pro-max landing page for a beauty spa
+/kit:ui-ux-pro-max SaaS dashboard for fintech analytics
+/kit:ui-ux-pro-max mobile onboarding for a fitness app
+/kit:ui-ux-pro-max -y admin panel for a CRM with a minimal aesthetic   (bypass gate)
 ```
 
 ---
@@ -145,9 +218,10 @@ The `frontend-specialist` generates components following the design system.
 ## Related
 
 | Need | Skill / Agent |
-|------|---------------|
-| Design tokens + components | `frontend-design` |
-| Accessibility + contrast | `web-design-guidelines` |
-| Tailwind v4 patterns | `tailwind-patterns` |
-| Next.js / React perf | `nextjs-react-expert` |
-| Implementation | `frontend-specialist` agent |
+|---|---|
+| Design tokens + components | `kit:frontend-design` |
+| Accessibility + contrast | `kit:web-design-guidelines` |
+| Tailwind v4 patterns | `kit:tailwind-patterns` |
+| Next.js / React perf | `kit:nextjs-react-expert` |
+| Mobile-first UX | `kit:mobile-design` |
+| Implementation | `kit:frontend-specialist` |

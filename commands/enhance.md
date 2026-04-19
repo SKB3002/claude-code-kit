@@ -1,70 +1,153 @@
 ---
 description: Add or update features in an existing application. Iterative development mode.
 argument-hint: <change to make>
+tier: HEAVY
+tier-rationale: Typically 2–3 specialists depending on scope (frontend + backend, or + db), writes multiple files.
+estimated-tokens: "50k–150k"
+risk: Cross-cutting changes (auth, schema rename) pull in more agents and exceed upper bound.
 ---
 
-# /enhance — Update Application
+# /kit:enhance — Update Existing Application
 
 $ARGUMENTS
 
 ---
 
-## Task
+## Flow
 
-Add features or make updates to an existing application.
+**Step 1 — Parse bypass flag.**
+If `$ARGUMENTS` starts with `--yes` or `-y`, set `bypass = true` and strip the flag.
 
-### Steps
+**Step 2 — Load the approval-gate skill.**
+Read `skills/approval-gate/SKILL.md`.
 
-1. **Understand current state**
-   - Read the repo structure (use built-in `Explore` agent for quick mapping)
-   - Identify existing tech stack and conventions
-   - Read `CLAUDE.md` / `KIT_PROTOCOL.md` if present
+**Step 3 — Scout (main-context, cheap).**
+Before dispatching any agent, spend a small budget on scouting:
+- Read `README.md`, `CLAUDE.md`, `KIT_PROTOCOL.md`, and `package.json` / `pyproject.toml` / `Cargo.toml` / `go.mod` if present
+- Grep for the feature area the user mentioned (e.g. "auth", "dark mode", "stripe")
+- Identify: tech stack, likely affected files, existing conventions
 
-2. **Plan changes**
-   - Determine what will be added / changed / removed
-   - Detect affected files and dependents
-   - Flag risky changes (migrations, public APIs, auth)
+Do NOT invoke agents yet. This is orientation only — keeps the gate's agent list accurate.
 
-3. **Present plan for major changes**
-   ```
-   To add the admin panel:
-   - Create 15 files
-   - Update 8 files
-   - Needs 1 migration
-   - ~10 min of work
+**Step 4 — Build the agent plan** based on Step 3:
 
-   Proceed? (y/n)
-   ```
+| Change type | Typical agents |
+|---|---|
+| UI only (theme, layout, component) | `kit:frontend-specialist` |
+| API / business logic | `kit:backend-specialist` |
+| Schema / migration | `kit:database-architect` (+ backend) |
+| Cross-cutting (auth, full feature) | `kit:project-planner` → `kit:backend-specialist` → `kit:frontend-specialist` |
+| Infra / deployment config | `kit:devops-engineer` |
 
-4. **Apply**
-   - Invoke relevant agents (parallel when independent)
-   - Make changes
-   - Run appropriate validation scripts
+Pick the minimum set that actually covers the change. Don't over-staff.
 
-5. **Follow-up**
-   - Hot reload / restart as needed
-   - Commit each change cleanly
+**Step 5 — Render the HEAVY gate (skip if `bypass`).**
+
+```
+⚖️  Kit dispatch preview — /kit:enhance
+
+Task: "<stripped args>"
+
+Planned agents (in order):
+  <kit:agent-1>          — <3–6 word purpose>
+  <kit:agent-2>          — <3–6 word purpose>
+  ...
+
+Planned skills: <kit:skill-a>, <kit:skill-b>, ...
+
+Tier: HEAVY  (50k–150k tokens, ~4–10 min wall-clock)
+Why:  <tier-rationale from frontmatter, tailored to this task>
+Risk: <risk from frontmatter, tailored to this task>
+
+MoSCoW for this task:
+  MUST    — <minimum that satisfies the user's stated goal>
+  SHOULD  — <valuable additions the main plan includes>
+  COULD   — <scope creep candidates to defer>
+  WON'T   — <explicit out-of-scope guardrails; always include test generation if not asked>
+
+Alternatives:
+  (a) Proceed as-is                                           ~50k–150k
+  (b) MUST-only: drop SHOULDs, skip tests/docs               ~25k–60k  (≈MEDIUM)
+  (c) Plan-only: run kit:project-planner, no file writes     ~15k–40k  (≈MEDIUM)
+
+[if ~/.kit/budget.json or ./.kit/budget.json present:]
+Your budget: <level> (from <path>)
+Recommended: <(c) if low, (a) if medium/ok>
+
+Reply:  go / a   — proceed with full plan
+        b        — MUST-only
+        c        — plan-only
+        tweak    — edit scope or agent list first
+        cancel
+```
+
+Reply parsing per §3.4 of the approval-gate skill.
+On cancel: append cancelled-run entry (with `estimated_tokens` recorded so `/kit:ledger weekly` can show the savings), print `🚫 Cancelled. No changes made.` and stop.
+
+**Step 6 — Dispatch per the chosen alternative.**
+
+- **(a) Full plan** — dispatch the agents from Step 4 in order (or in parallel if independent).
+- **(b) MUST-only** — dispatch the same agents but prefix each prompt with `SCOPE: MUSTs only — <the MUSTs list>. Do NOT implement SHOULDs/COULDs.`
+- **(c) Plan-only** — dispatch only `kit:project-planner` to write `docs/PLAN-enhance-<slug>.md`. No specialist agents.
+
+Each Agent call carries:
+
+```
+Agent(
+  subagent_type="<kit:...>",
+  description="Enhance: <slice>",
+  prompt=<<
+    REPO CONTEXT (from Step 3 scouting): <stack, conventions, affected files>
+    TASK: <the slice of $ARGUMENTS this agent owns>
+    SCOPE: <MUST-only or full, per chosen alternative>
+    CONVENTIONS:
+    - Follow existing file/naming patterns
+    - Commit each logical change separately
+    - Run the project's lint + test suite before finishing
+    - If the change affects >10 files unexpectedly, stop and report instead of proceeding
+  >>
+)
+```
+
+**Step 7 — Append to the usage log** per §5 of the approval-gate skill. Record `chosen_alternative`, each agent's approximate tokens, skills list, files written/changed, and duration.
+
+**Step 8 — Print the inline HEAVY ledger.**
+
+```
+📒  /kit:enhance ledger
+Ran: <N> of <M> planned agents <(+ any skipped)>
+Skills: <list>
+Files written: <N>  ·  files changed: <N>
+Approximate token share:
+  <kit:agent-1>   <N>%   (~<N>k)
+  <kit:agent-2>   <N>%   (~<N>k)
+  other           <N>%   (~<N>k)
+Tier declared: HEAVY (50k–150k) · observed: ~<N>k (<in-tier ✓ | drift ✗>) · duration: <Xm Ys>
+Logged to .kit/usage.json (<run-id>)
+Worth it? — <one sentence: what the user now has>.
+    Tag later with /kit:ledger verdict <run-id> useful|wasted|partial
+Next suggested: /kit:test <feature>   (MEDIUM)  or  /kit:deploy check  (HEAVY)
+```
+
+---
+
+## Cautions
+
+- **Warn on conflicting requests** before entering the gate — e.g. user asks "add Firebase auth" when the project uses Postgres/JWT. Surface the conflict, ask, don't ignore.
+- **Don't skip migrations review** — any schema change routes through `kit:database-architect`.
+- **Commit each logical change separately** — never a single mega-commit.
 
 ---
 
 ## Examples
 
 ```
-/enhance add dark mode
-/enhance build admin panel
-/enhance integrate Stripe payments
-/enhance add full-text search
-/enhance edit profile page
-/enhance make the dashboard responsive
-/enhance add rate limiting to /api/v1/generate
-/enhance switch from LangSmith to Langfuse
+/kit:enhance add dark mode
+/kit:enhance build admin panel
+/kit:enhance integrate Stripe payments
+/kit:enhance add full-text search
+/kit:enhance edit profile page
+/kit:enhance make the dashboard responsive
+/kit:enhance add rate limiting to /api/v1/generate
+/kit:enhance -y switch from LangSmith to Langfuse   (bypass gate)
 ```
-
----
-
-## Caution
-
-- Get approval for major changes before editing files
-- Warn on conflicting requests (e.g. "use Firebase" when project uses Postgres)
-- Commit each logical change with a clear message
-- If a change affects >10 files, propose a plan via `project-planner` first

@@ -1,6 +1,10 @@
 ---
 description: Coordinate multiple agents for complex multi-domain tasks. Use for comprehensive reviews or cross-stack implementation.
 argument-hint: <task to orchestrate>
+tier: HEAVY
+tier-rationale: Contract guarantees ≥3 agents with 2-phase Plan→approve→Implement; parallel fan-out.
+estimated-tokens: "80k–250k"
+risk: Broad tasks ("review the whole repo") can pull 5+ agents; always the most expensive command in the kit.
 ---
 
 # /orchestrate — Multi-Agent Orchestration

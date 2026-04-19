@@ -2,6 +2,66 @@
 
 All notable changes to Claude Code Kit are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-04-19
+
+Minor, non-breaking, additive. All v0.2.1 commands continue to work; six new commands land, agent dispatch becomes deterministic, and the kit gains an approval-first consent layer + usage tracking.
+
+### Added
+
+**Approval-first dispatch (new consent layer)**
+
+- Every `/kit:*` command declares a tier in its frontmatter: `LIGHT` (runs directly), `MEDIUM` (one-line confirm), or `HEAVY` (full gate with planned agents, planned skills, MoSCoW scope, ≥2 lighter alternatives, and a budget line when a budget is set).
+- New skill: [`kit:approval-gate`](skills/approval-gate/SKILL.md) + [tiers.md](skills/approval-gate/tiers.md) — the rendering contract, reply parsing, and token-estimation formula.
+- `--yes` / `-y` bypass works on all tiers; the usage log still fires.
+- Rationale documented in [docs/PLAN-v0.3-user-approval-economy.md](docs/PLAN-v0.3-user-approval-economy.md): the kit targets $20-plan users where weekly rate limits matter, so nothing fans out silently.
+
+**Six new slash commands** (3 LIGHT + 3 targeted adoptions)
+
+- [`/kit:help`](commands/help.md) (LIGHT) — live capability index, globs `commands/`, `agents/`, `skills/*/SKILL.md` at invocation time so new primitives show up automatically.
+- [`/kit:budget`](commands/budget.md) (LIGHT) — fully opt-in budget declaration at `~/.kit/budget.json` (home-level default, `--here` for project-local). Absent file = invisible feature.
+- [`/kit:ledger`](commands/ledger.md) (LIGHT) — read-only views over `.kit/usage.json`: `weekly`, `by-agent`, `by-skill`, `by-tier`, `command <name>`, `roi`, `verdict <id> <tag>`, `clear`.
+- [`/kit:context-budget`](commands/context-budget.md) (LIGHT) — session-scope introspection with GREEN/YELLOW/RED headroom signal and drop-candidate detection. Complements `/kit:ledger` (past spend) by reporting currently loaded context.
+- [`/kit:hookify`](commands/hookify.md) (LIGHT) — natural-language → `hooks.json` snippet generator with safety guardrails (Bash PreToolUse warnings, duplicate detection against `hooks.example.json`, `${CLAUDE_PLUGIN_ROOT}` reminders). Never writes to `hooks.json` itself.
+- [`/kit:instincts`](commands/instincts.md) (LIGHT) — project-scoped learned preferences at `.kit/instincts.yaml` (git-tracked by default). Synchronous, user-approved promotion — no background capture, no LLM fee on idle.
+
+**Automatic agent dispatch wired into 8 commands**
+
+`/kit:debug`, `/kit:plan`, `/kit:test`, `/kit:brainstorm`, `/kit:enhance`, `/kit:deploy`, `/kit:create`, `/kit:ui-ux-pro-max` now open with explicit `Agent(subagent_type="kit:<name>", prompt=…)` calls instead of prose instructions. Deterministic handoff, not interpretation.
+
+**Usage tracking — `.kit/usage.json`**
+
+Every `/kit:*` run (gated, bypassed, or cancelled) appends one entry with tier declared vs observed, per-agent approximate tokens, skills, files touched, and an open slot for the user's later `verdict useful|wasted|partial` tag. Gitignored. Honesty contract: every token number prefixed `~`, no dollar conversion, no fabricated quota/reset numbers.
+
+**`KIT_HOOK_PROFILE` env var (agent-layer contract)**
+
+`off` / `minimal` / `standard` / `strict` — Claude reads the var at session start and runs the matching validation scripts by protocol (not through Claude Code's hook loader). Documented in [KIT_PROTOCOL.md §6](KIT_PROTOCOL.md) and [hooks/profiles/README.md](hooks/profiles/README.md). No new command — single-variable contract.
+
+**New skills**
+
+- [`kit:approval-gate`](skills/approval-gate/SKILL.md) — gate contract + [tiers.md](skills/approval-gate/tiers.md) (tier taxonomy + token formula).
+- [`kit:instincts`](skills/instincts/SKILL.md) — mental model + [schema.md](skills/instincts/schema.md) (YAML reference).
+
+**Renamed skill**
+
+- `kit:brainstorming` → `kit:socratic-gate` to avoid near-collision with `/kit:brainstorm`. Frontmatter notes the former name so external references have a breadcrumb.
+
+### Changed
+
+- All 11 pre-existing commands gained `tier`, `tier-rationale`, `estimated-tokens`, and `risk` frontmatter.
+- [`/kit:brainstorm`](commands/brainstorm.md) dispatches `kit:product-manager` explicitly.
+- [`/kit:test`](commands/test.md) sub-command branching: `run`/`coverage`/`watch` = LIGHT (no gate); `generate` = MEDIUM gated.
+- [README.md](README.md): new "Approval-first by design" section, rendered all primitives with `kit:` prefix for provenance.
+- [KIT_PROTOCOL.md](KIT_PROTOCOL.md): new §5 approval-gate rules, new §6 `KIT_HOOK_PROFILE` contract, slash-command table gained a Tier column.
+- [.gitignore](.gitignore) adds `.kit/`.
+
+### Fixed
+
+- [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) — dropped top-level `$schema` and `description` keys that caused strict-validation failures on some Claude Code versions.
+
+### Design stance
+
+From [`agents/product-manager.md`](agents/product-manager.md) + [`agents/product-owner.md`](agents/product-owner.md): **"Build the right thing, on the user's budget, with the user's consent."**
+
 ## [0.2.1] — 2026-04-18
 
 ### Fixed

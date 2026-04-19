@@ -1,124 +1,200 @@
 ---
 description: Production deployment with pre-flight checks, deploy execution, and verification.
 argument-hint: [check|preview|production|rollback]
+tier: HEAVY
+tier-rationale: Pre-flight + deploy + verify via devops-engineer; external side effects (pushes, build runs).
+estimated-tokens: "40k–100k"
+risk: Rollbacks or failing health checks trigger additional agent rounds; also HEAVY has real-world blast radius beyond tokens.
 ---
 
-# /deploy — Production Deployment
+# /kit:deploy — Production Deployment
 
 $ARGUMENTS
 
 ---
 
-## Purpose
+## ⚠ Real-world blast radius
 
-Run pre-flight checks, execute the deployment, and verify.
+This command writes to the outside world — builds, pushes, cloud APIs. The approval gate is the last safety net before changes leave the machine. **`--yes`/`-y` bypass is accepted but strongly discouraged for `production`.** Documented in the gate's risk line.
 
-## Sub-commands
+---
+
+## Flow
+
+**Step 1 — Parse bypass flag.**
+If `$ARGUMENTS` starts with `--yes` or `-y`, set `bypass = true` and strip the flag.
+
+**Step 2 — Classify the sub-command.**
+
+| `$ARGUMENTS` | Mode | Tier override |
+|---|---|---|
+| *empty* or `check`         | CHECK          | MEDIUM (no external side effects) |
+| `preview` or `staging`     | DEPLOY-PREVIEW | HEAVY |
+| `production` or `prod`     | DEPLOY-PROD    | HEAVY + safety caveat |
+| `rollback`                 | ROLLBACK       | HEAVY + safety caveat |
+
+**Step 3 — Load the approval-gate skill.**
+Read `skills/approval-gate/SKILL.md`.
+
+**Step 4 — Scout (main-context, cheap).**
+Before gating: read `README.md`, `package.json` / `pyproject.toml`, look for `vercel.json`, `fly.toml`, `railway.toml`, `Dockerfile`, `docker-compose.yml`, `k8s/`, `.github/workflows/` — identify the deployment target. The gate must name the actual platform, not guess.
+
+**Step 5 — Build the agent plan.**
+
+| Mode | Agents |
+|---|---|
+| CHECK            | `kit:devops-engineer` (read-only pre-flight) |
+| DEPLOY-PREVIEW   | `kit:devops-engineer` (pre-flight → build → deploy → verify) |
+| DEPLOY-PROD      | `kit:security-auditor` (1 pass) → `kit:devops-engineer` |
+| ROLLBACK         | `kit:devops-engineer` |
+
+Add `kit:test-engineer` to CHECK/DEPLOY-PREVIEW/DEPLOY-PROD if the test suite hasn't run recently (main-context heuristic: check `git log --since=1.day` for test file touches — if the user's last N commits don't show test runs, we add it).
+
+**Step 6 — Render the gate (skip if `bypass`).**
+
+**For CHECK (MEDIUM one-liner):**
 
 ```
-/deploy            - Interactive deployment wizard
-/deploy check      - Pre-deployment checks only
-/deploy preview    - Deploy to preview/staging
-/deploy production - Deploy to production
-/deploy rollback   - Rollback to previous version
+⚖️  /kit:deploy check   → kit:devops-engineer  (+ pre-flight checklist)
+    Tier: MEDIUM · 8k–20k tokens · no external writes · platform: <detected>
+    Proceed? (y/n/tweak)
+```
+
+**For DEPLOY-PREVIEW / DEPLOY-PROD / ROLLBACK (HEAVY full gate):**
+
+```
+⚖️  Kit dispatch preview — /kit:deploy <mode>
+
+Task: <interpreted: "deploy preview to <platform>" | "deploy production to <platform>" | "rollback to <previous version>">
+
+Planned agents (in order):
+  <agents per Step 5, kit: prefixed, each with 3–6 word purpose>
+
+Planned skills: kit:deployment-procedures, kit:server-management, kit:vulnerability-scanner (production only), kit:testing-patterns (if tests will run)
+
+Tier: HEAVY  (40k–100k tokens, ~3–8 min wall-clock)
+Why:  <rationale, tailored: "preview deploy to Vercel after full pre-flight">
+Risk: <risk, tailored: "production deploy touches real users; rollback available via /kit:deploy rollback">
+
+External actions this will perform:
+  - git push origin <branch> (if staged commits exist)
+  - <platform> build + deploy
+  - post-deploy health check against <url>
+  [production only: optional 'git tag v<version>' if requested]
+
+MoSCoW for this task:
+  MUST    — <pre-flight pass, build, deploy, health check>
+  SHOULD  — <tag release, post-deploy smoke test>
+  COULD   — <announce in #releases Slack, update CHANGELOG>
+  WON'T   — <rollback previous version unless explicit /kit:deploy rollback>
+
+Alternatives:
+  (a) Proceed as-is                                           ~40k–100k
+  (b) CHECK-only: run pre-flight, report, stop before deploy ~8k–20k   (≈MEDIUM)
+  (c) Preview instead of production (if mode=production)     ~30k–70k   (≈HEAVY but zero prod risk)
+
+[if budget file present: budget line + recommendation]
+
+Reply:  go / a   — proceed
+        b        — CHECK-only (no external actions)
+        c        — preview instead of production  (production mode only)
+        tweak    — edit target platform / branch / scope
+        cancel
+```
+
+Reply parsing per §3.4 of the approval-gate skill.
+On cancel: append cancelled-run entry to `.kit/usage.json`, print `🚫 Cancelled. Nothing deployed.` and stop.
+
+**Step 7 — Pre-flight checklist (all modes except rollback).**
+
+Before dispatching the devops-engineer, the command runs these main-context Bash calls so the checklist is honest:
+
+```
+Code Quality
+  [ ] Lint:       npm run lint   | ruff check .
+  [ ] Types:      npx tsc --noEmit  | mypy .
+  [ ] Tests:      npm test  | pytest
+
+Security
+  [ ] No hardcoded secrets (grep for common patterns)
+  [ ] .env.example present and current
+  [ ] Dependency audit: npm audit | pip-audit
+  [ ] Kit scanner: python ${CLAUDE_PLUGIN_ROOT}/skills/vulnerability-scanner/scripts/security_scan.py .
+
+Artifacts
+  [ ] README current
+  [ ] CHANGELOG current
+```
+
+Any red item → report to the user, STOP. Do not proceed to deploy. User fixes and re-runs.
+
+**Step 8 — Dispatch (DEPLOY / ROLLBACK modes, only if checklist green and gate approved).**
+
+```
+Agent(
+  subagent_type="kit:devops-engineer",
+  description="Deploy <mode> to <platform>",
+  prompt=<<
+    PLATFORM: <detected from Step 4>
+    MODE: <preview | production | rollback>
+    SCOPE: <chosen alternative — full or MUST-only>
+    BRANCH: <current branch>
+    PRE-FLIGHT: <PASS/FAIL summary from Step 7>
+
+    TASK:
+    1. Run the platform's deploy command (table at bottom of this file).
+    2. Wait for build/deploy to finish. Stream logs to the user.
+    3. Post-deploy: hit the public health endpoint and verify 200 + expected payload shape.
+    4. Report success or failure with the exact commands and URLs used.
+    5. On failure, recommend the rollback command — do not auto-rollback.
+  >>
+)
+```
+
+For DEPLOY-PROD, run `kit:security-auditor` first with a quick final-scan prompt; only proceed to `kit:devops-engineer` if it returns clean.
+
+**Step 9 — Append to the usage log** per §5 of the approval-gate skill. Include the external platform and resulting deployment URL/version in the `notes` field so the ledger can show "deployed v1.2.3 to vercel" later.
+
+**Step 10 — Print the inline HEAVY ledger.**
+
+```
+📒  /kit:deploy <mode> ledger
+Ran: <N> of <M> planned agents
+Pre-flight: <PASS|FAIL>  ·  platform: <detected>
+Skills: kit:deployment-procedures, <…>
+Files changed: <N> (usually 0 for deploy; rollback may revert files)
+External actions: <bullet list of what actually happened>
+Approximate token share: <per-agent>
+Tier declared: HEAVY (40k–100k) · observed: ~<N>k (<in-tier ✓ | drift ✗>) · duration: <Xm Ys>
+Logged to .kit/usage.json (<run-id>)
+Status: ✅ deployed v<version> to <url>   |   ❌ failed at <step>
+Next suggested: /kit:preview check (verify local still works) | /kit:deploy rollback (HEAVY)
 ```
 
 ---
 
-## Pre-Deployment Checklist
+## Platform reference
 
-```markdown
-## 🚀 Pre-Deploy Checklist
-
-### Code Quality
-- [ ] Lint passes (`npm run lint` | `ruff check .`)
-- [ ] Types pass (`npx tsc --noEmit` | `mypy .`)
-- [ ] Tests passing (`npm test` | `pytest`)
-
-### Security
-- [ ] No hardcoded secrets
-- [ ] Environment variables documented in `.env.example`
-- [ ] Dependencies audited (`npm audit` | `pip-audit`)
-- [ ] `${CLAUDE_PLUGIN_ROOT}/skills/vulnerability-scanner/scripts/security_scan.py .` clean
-
-### Performance
-- [ ] Bundle size acceptable (Node)
-- [ ] No debug `console.log` / `print(...)` left
-- [ ] Images optimized
-
-### Documentation
-- [ ] README updated
-- [ ] CHANGELOG updated
-- [ ] API docs current
-
-### Ready to deploy? (y/n)
-```
-
----
-
-## Deployment Flow
-
-```
-/deploy → Pre-flight checks → Build → Deploy → Health check → ✅
-           (fail → surface errors, offer rollback)
-```
-
----
-
-## Output Format
-
-### Successful Deploy
-
-```markdown
-## 🚀 Deployment Complete
-- Version: v1.2.3
-- Environment: production
-- Duration: 47s
-- Platform: Vercel / Fly.io / Railway / K8s
-
-### Health Check
-✅ API responding
-✅ DB connected
-✅ Downstream services healthy
-```
-
-### Failed Deploy
-
-```markdown
-## ❌ Deployment Failed
-### Error
-Build failed at: <step>
-### Resolution
-1. Fix <file:line>
-2. Run build locally
-3. Re-try `/deploy`
-
-Rollback available — run `/deploy rollback` if needed.
-```
-
----
-
-## Platform Support
-
-| Platform | Command |
-|----------|---------|
-| Vercel | `vercel --prod` |
+| Platform | Deploy command |
+|---|---|
+| Vercel | `vercel --prod` (prod) / `vercel` (preview) |
 | Railway | `railway up` |
 | Fly.io | `fly deploy` |
-| Docker | `docker compose up -d` |
 | Render | `render deploy` |
 | Heroku | `git push heroku main` |
+| Docker | `docker compose up -d --build` |
 | Kubernetes | `kubectl apply -f k8s/` |
-| FastAPI (gunicorn) | `gunicorn app.main:app -c gunicorn.conf.py` |
+| FastAPI + gunicorn | `gunicorn app.main:app -c gunicorn.conf.py` |
 
 ---
 
 ## Examples
 
 ```
-/deploy
-/deploy check
-/deploy preview
-/deploy production
-/deploy rollback
+/kit:deploy                              # interactive (asks mode in gate)
+/kit:deploy check                        # MEDIUM one-liner, no external actions
+/kit:deploy preview                      # HEAVY gate, deploys to staging
+/kit:deploy production                   # HEAVY gate + security sweep + deploy
+/kit:deploy rollback                     # HEAVY gate, reverts to previous version
+/kit:deploy -y check                     # bypass gate, just run checklist
 ```

@@ -37,3 +37,10 @@ desktop.ini
 dist/
 build/
 *.log
+
+# Kit runtime state
+# .kit/usage.json — append-only spend log (always private)
+# .kit/budget.json — optional project-local budget override (always private)
+# .kit/instincts.yaml — team preferences; git-tracked by default per skills/instincts/SKILL.md
+.kit/
+!.kit/instincts.yaml

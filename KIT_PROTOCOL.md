@@ -161,7 +161,7 @@ Protocol:
 1. **Never assume.** If even 1% is unclear, ask.
 2. **Spec-heavy requests.** When the user gives a numbered list, don't skip the gate — ask about trade-offs or edge cases before starting.
 3. **Wait.** Do not invoke sub-agents or write code until the user clears the gate.
-4. **Reference.** Full protocol in [skills/brainstorming/SKILL.md](skills/brainstorming/SKILL.md).
+4. **Reference.** Full protocol in [skills/socratic-gate/SKILL.md](skills/socratic-gate/SKILL.md).
 
 ### Final-checklist protocol
 
@@ -201,23 +201,50 @@ python ${CLAUDE_PLUGIN_ROOT}/skills/<skill>/scripts/<script>.py
 
 To wire any of these into Claude Code hooks (so they run automatically after edits), see [hooks/README.md](hooks/README.md). Hooks are **off by default**.
 
+### Approval gate (P0)
+
+**Contract:** no MEDIUM or HEAVY `/kit:*` command dispatches an agent or writes a file until the user has approved the gate (or passed `--yes` / `-y`). LIGHT commands run directly. This is load-bearing for the $20-plan users the kit targets.
+
+| Tier | Gate behaviour |
+|---|---|
+| LIGHT  | No gate. Runs directly. |
+| MEDIUM | One-line preview + `y/n/tweak` confirm. |
+| HEAVY  | Full preview: planned agents (in order), planned skills, tier + estimated tokens + wall-clock, risk, MoSCoW, **≥2 lighter alternatives**, budget line (if set), reply options. |
+
+Every command's `tier`, `tier-rationale`, and `estimated-tokens` live in its frontmatter and are the single source of truth. The skill that renders the gate and appends the usage-log entry is [skills/approval-gate/SKILL.md](skills/approval-gate/SKILL.md); tier taxonomy and the token-estimation formula live in [skills/approval-gate/tiers.md](skills/approval-gate/tiers.md).
+
+**Honesty rules (P0):**
+
+- Every token number shown to the user carries `~` (approximate)
+- Never convert tokens to dollars
+- Never fabricate remaining-quota or reset-timestamp numbers — Claude Code doesn't expose them
+- Every run (approved, bypassed, or cancelled) appends one entry to `<project-root>/.kit/usage.json` — the file is gitignored and the user can wipe it with `/kit:ledger clear`
+
+**Optional budget file:** `~/.kit/budget.json` (home) with optional project-local override. If absent, gate behaviour is unchanged — the kit never auto-creates the file and never prompts for it.
+
 ### Slash-command mapping
 
-Claude Code doesn't have hard "modes"; slash commands replace them.
+Claude Code doesn't have hard "modes"; slash commands replace them. The **Tier** column is authoritative — it determines gate behaviour.
 
-| Intent | Command | Behavior |
-|--------|---------|----------|
-| Plan a feature | `/kit:plan <desc>` | `project-planner` agent, produces `docs/PLAN-{slug}.md`. **No code.** |
-| Brainstorm | `/kit:brainstorm <idea>` | Structured exploration, 3 options with trade-offs |
-| Build new | `/kit:create <desc>` | `project-planner` + `app-builder` skill, scaffolds the app |
-| Enhance existing | `/kit:enhance <desc>` | Iterative updates, approval gate on large diffs |
-| Orchestrate | `/kit:orchestrate <desc>` | ≥3 agents in parallel, 2-phase (Plan → approval → implement) |
-| Debug | `/kit:debug <issue>` | 7-step systematic-debugging skill |
-| Deploy | `/kit:deploy <target>` | Pre-deploy checklist + stack-specific deploy flow |
-| Test | `/kit:test [target]` | Stack-aware test runner / generator |
-| Preview | `/kit:preview [start\|stop\|check]` | Dev-server lifecycle |
-| Status | `/kit:status` | Project snapshot (git, stack, PLAN files, running servers) |
-| UI/UX | `/kit:ui-ux-pro-max <desc>` | `frontend-specialist` + design skills |
+| Intent | Command | Tier | Behavior |
+|--------|---------|------|----------|
+| Plan a feature | `/kit:plan <desc>` | MEDIUM | `project-planner` agent, produces `docs/PLAN-{slug}.md`. **No code.** |
+| Brainstorm | `/kit:brainstorm <idea>` | MEDIUM | `product-manager`, 3 options with trade-offs |
+| Build new | `/kit:create <desc>` | HEAVY | `project-planner` + specialists, scaffolds the app |
+| Enhance existing | `/kit:enhance <desc>` | HEAVY | Iterative updates, full gate with MoSCoW + alternatives |
+| Orchestrate | `/kit:orchestrate <desc>` | HEAVY | ≥3 agents in parallel, 2-phase (Plan → approval → implement) |
+| Debug | `/kit:debug <issue>` | MEDIUM | `debugger` + systematic-debugging skill |
+| Deploy | `/kit:deploy <target>` | HEAVY | Pre-flight checklist + stack-specific deploy flow |
+| Test | `/kit:test [target]` | LIGHT / MEDIUM | Run = LIGHT (no gate); generate = MEDIUM gated |
+| Preview | `/kit:preview [start\|stop\|check]` | LIGHT | Dev-server lifecycle |
+| Status | `/kit:status` | LIGHT | Project snapshot (git, stack, PLAN files, running servers) |
+| UI/UX | `/kit:ui-ux-pro-max <desc>` | HEAVY | `frontend-specialist` + design skills |
+| Budget | `/kit:budget [low\|medium\|ok\|clear]` | LIGHT | Opt-in budget file at `~/.kit/budget.json` |
+| Ledger | `/kit:ledger [weekly\|by-agent\|roi\|…]` | LIGHT | Read-only views over `.kit/usage.json` |
+| Help   | `/kit:help [commands\|agents\|skills\|<name>]` | LIGHT | Live capability index — reads frontmatter from the plugin filesystem |
+| Context budget | `/kit:context-budget [verbose]` | LIGHT | Session-scope load report + /compact recommendation |
+| Hookify | `/kit:hookify <intent>` | LIGHT | NL hook intent → `hooks.json` snippet; never writes the file |
+| Instincts | `/kit:instincts [show\|promote\|clear\|status]` | LIGHT | Project-scoped learned preferences at `.kit/instincts.yaml` |
 
 **Plan mode (4-phase):**
 
@@ -230,7 +257,45 @@ Single-file fix? Skip the plan and just edit. Structural change? Create the plan
 
 ---
 
-## 6. TIER 2 — Design Rules (reference)
+## 6. `KIT_HOOK_PROFILE` — Agent-layer hook intensity
+
+This is a **contract Claude reads**, not a Claude Code hook registration. When the env var `KIT_HOOK_PROFILE` is set, Claude runs the matching validation scripts at the moments specified below, on behalf of the user. `hooks/hooks.json` still ships empty — this protocol runs alongside, not through, the hook loader.
+
+### Profiles
+
+| Profile | Contract |
+|---|---|
+| `off` (default; var unset or invalid) | Do nothing. The user is running hook-free — respect that. |
+| `minimal`  | After every `Edit` / `Write` / `MultiEdit`: run `lint_runner.py` on the touched file. |
+| `standard` | `minimal` + after every `Edit` / `Write`: run `security_scan.py` on the touched file. At session `Stop` (final assistant turn): run `test_runner.py --summary`. |
+| `strict`   | `standard` + before every `Bash` tool call: run `security_scan.py --pre-bash` (warn-only — never block the call). After edits to `schema.*` / `models/` files: run `schema_validator.py`. After edits to `routes/` / `app/api/` files: run `api_validator.py`. |
+
+Scripts referenced:
+```
+python ${CLAUDE_PLUGIN_ROOT}/skills/lint-and-validate/scripts/lint_runner.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/vulnerability-scanner/scripts/security_scan.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/testing-patterns/scripts/test_runner.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/database-design/scripts/schema_validator.py
+python ${CLAUDE_PLUGIN_ROOT}/skills/api-patterns/scripts/api_validator.py
+```
+
+### Operating rules
+
+1. **Read the env var once at session start.** If it's one of `minimal` / `standard` / `strict`, activate the profile. Anything else → `off`, silently.
+2. **Surface the script output to the user.** Never hide a failing lint or security result. If `security_scan.py` flags a high-severity issue on a write, stop and report before proceeding.
+3. **Warn-only for `strict` pre-Bash.** `strict` does not block Bash calls — it runs the pre-check, surfaces warnings, and the user or the next tool call decides. Blocking Bash via agent-layer contract is unreliable; for real blocking, use actual Claude Code hooks from `hooks/hooks.example.json`.
+4. **Document the active profile once per session.** The first time a profile-driven script runs, tell the user: `ℹ️  KIT_HOOK_PROFILE=<level> — running <script> after <event>.` Afterward, silent.
+5. **Opt-out is always one step away.** If the user finds the profile noisy, they `unset KIT_HOOK_PROFILE` and relaunch — no cleanup needed, nothing persists on disk.
+
+### When to prefer real hooks instead
+
+The agent-layer contract depends on Claude remembering this section through context compaction. If you need deterministic "this script MUST run on every Edit, no matter what," copy the matching entry from [`hooks/hooks.example.json`](hooks/hooks.example.json) into `hooks/hooks.json`. Real hooks are Claude-Code-level and don't drift with context.
+
+See [`hooks/profiles/README.md`](hooks/profiles/README.md) for the user-facing setup guide.
+
+---
+
+## 7. TIER 2 — Design Rules (reference)
 
 Design rules live in the specialist agents, not here.
 
@@ -250,7 +315,7 @@ For design work: open and read the agent file. The rules are there.
 
 ---
 
-## 7. Quick reference
+## 8. Quick reference
 
 ### Agent roster (20)
 
@@ -280,11 +345,11 @@ For design work: open and read the agent file. The rules are there.
 - **Backend / Python**: `fastapi-expert`, `sqlalchemy-expert`, `python-patterns`, `api-patterns`, `database-design`
 - **LLM**: `llm-observability`, `mcp-builder`
 - **Frontend**: `frontend-design`, `web-design-guidelines`, `tailwind-patterns`, `nextjs-react-expert`, `mobile-design`
-- **Workflow**: `brainstorming`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
+- **Workflow**: `socratic-gate`, `approval-gate`, `plan-writing`, `parallel-agents`, `intelligent-routing`, `behavioral-modes`
 
 ---
 
-## 8. What the kit does NOT do
+## 9. What the kit does NOT do
 
 - It does not auto-run lint, tests, or scans — those are opt-in via [hooks/README.md](hooks/README.md).
 - It does not auto-spawn MCP servers — those are opt-in via [mcp-servers.md](mcp-servers.md).
@@ -293,6 +358,6 @@ For design work: open and read the agent file. The rules are there.
 
 ---
 
-## 9. Attribution
+## 10. Attribution
 
 Originally designed as `GEMINI.md` for the Antigravity Kit by **VUDOVN** (MIT). Adapted for Claude Code under the same MIT license. See [LICENSE](LICENSE).
