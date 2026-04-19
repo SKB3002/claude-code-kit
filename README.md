@@ -1,6 +1,6 @@
 # Claude Code Kit
 
-> A comprehensive Claude Code plugin that ships **20 specialist subagents**, **41 skills**, and **14 slash commands** — adapted from [antigravity-kit](https://github.com/vudovn/antigravity-kit) for the Claude Code ecosystem.
+> A comprehensive Claude Code plugin that ships **20 specialist subagents**, **42 skills**, and **17 slash commands** — adapted from [antigravity-kit](https://github.com/vudovn/antigravity-kit) for the Claude Code ecosystem.
 
 Claude Code Kit gives your Claude Code sessions an instant upgrade: domain experts that activate automatically, deep knowledge modules loaded on demand, and workflow commands that orchestrate entire feature builds. Built to augment Claude Code's native features — never to shadow them.
 
@@ -64,7 +64,7 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 
 All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>`. **Always invoke with the `/kit:` prefix** so it's clear the command is from this kit (and won't collide with built-ins or other plugins):
 
-`/kit:brainstorm` · `/kit:budget` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:help` · `/kit:ledger` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
+`/kit:brainstorm` · `/kit:budget` · `/kit:context-budget` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:help` · `/kit:hookify` · `/kit:instincts` · `/kit:ledger` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
 
 Run `/kit:help` in any session to see the full command/agent/skill catalog, rendered live from the plugin's filesystem — counts, tiers, and estimated tokens self-update when primitives are added.
 

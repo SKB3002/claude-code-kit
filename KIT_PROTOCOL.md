@@ -242,6 +242,9 @@ Claude Code doesn't have hard "modes"; slash commands replace them. The **Tier**
 | Budget | `/kit:budget [low\|medium\|ok\|clear]` | LIGHT | Opt-in budget file at `~/.kit/budget.json` |
 | Ledger | `/kit:ledger [weekly\|by-agent\|roi\|…]` | LIGHT | Read-only views over `.kit/usage.json` |
 | Help   | `/kit:help [commands\|agents\|skills\|<name>]` | LIGHT | Live capability index — reads frontmatter from the plugin filesystem |
+| Context budget | `/kit:context-budget [verbose]` | LIGHT | Session-scope load report + /compact recommendation |
+| Hookify | `/kit:hookify <intent>` | LIGHT | NL hook intent → `hooks.json` snippet; never writes the file |
+| Instincts | `/kit:instincts [show\|promote\|clear\|status]` | LIGHT | Project-scoped learned preferences at `.kit/instincts.yaml` |
 
 **Plan mode (4-phase):**
 
