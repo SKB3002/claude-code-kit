@@ -131,7 +131,20 @@ python ${CLAUDE_PLUGIN_ROOT}/skills/testing-patterns/scripts/test_runner.py .
 
 Report any reds to the user before finishing. Do not auto-fix at this step — surface and defer to the user.
 
-**Step 8 — Append to the usage log** per §5 of the approval-gate skill. `files_written` is the integer sum across all agents.
+**Step 8 — Write usage log (MANDATORY — use the Write tool, do not skip).**
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:create"`, `args`: stripped args
+   - `tier_declared`: `"HEAVY"`, `tier_observed`: recomputed from output size
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `"a"` | `"b"` | `"c"`
+   - `agents`: array of `{"name": "kit:<name>", "approx_tokens": <N>}` for each agent dispatched
+   - `skills`: array of skills consumed, `files_written`: total integer sum across all agents
+   - `approx_total_tokens`: sum across agents, `user_verdict`: `null`, `notes`: `null`
+3. Write the updated JSON back using the **Write tool**.
 
 **Step 9 — Print the inline HEAVY ledger.**
 

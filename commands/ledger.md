@@ -21,10 +21,11 @@ $ARGUMENTS
 Walk upward from cwd to find `.kit/usage.json` under the project root (detected by `.git/`, `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod`). If none exists, print:
 
 ```
-📒  No usage log yet at .kit/usage.json — run any /kit:* command to start tracking.
+📒  No usage log yet at .kit/usage.json — run any MEDIUM or HEAVY command to start tracking.
+    e.g. /kit:debug <bug>, /kit:plan <feature>, /kit:brainstorm <idea>
 ```
 
-and stop. Never auto-create; the file is born from the first gated/approved run.
+and stop. Never auto-create; the file is born from the first MEDIUM or HEAVY command run (those commands write it themselves after dispatch).
 
 **Step 2 — Parse the sub-command.**
 

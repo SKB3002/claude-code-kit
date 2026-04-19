@@ -17,6 +17,46 @@ $ARGUMENTS
 
 ---
 
+## Setup
+
+**Step 0 — Parse bypass flag.**
+If `$ARGUMENTS` starts with `--yes` or `-y`, set `bypass = true` and strip the flag.
+
+**Step 0b — Render the HEAVY gate (skip if `bypass`).**
+
+```
+⚖️  Kit dispatch preview — /kit:orchestrate
+
+Task: "<stripped args>"
+
+Planned agents: kit:project-planner + kit:explorer-agent (Phase 1)
+                ≥3 specialists from the selection matrix (Phase 2)
+Planned skills: kit:parallel-agents, kit:plan-writing + domain skills per selected agents
+
+Tier: HEAVY  (80k–250k tokens, ~8–20 min wall-clock)
+Why:  2-phase plan+implement with ≥3 agents; parallel fan-out in Phase 2.
+Risk: Broad tasks pull 5+ agents and exceed the upper bound — scope tightly.
+
+MoSCoW for this task:
+  MUST    — plan file written and user-approved, ≥3 agents dispatched, report generated
+  SHOULD  — validation scripts run (lint, security)
+  COULD   — additional specialists for edge cases
+  WON'T   — autonomous re-planning after Phase 2 starts without a new approval
+
+Alternatives:
+  (a) Proceed with full 2-phase orchestration                  ~80k–250k
+  (b) Plan-only: Phase 1 only, stop for review                 ~20k–50k  (≈MEDIUM)
+  (c) /kit:enhance for a single-agent targeted change          ~50k–150k
+
+Reply:  go / a   — full orchestration
+        b        — plan only
+        cancel
+```
+
+On cancel: write a cancelled entry to `.kit/usage.json` (see write step below), print `🚫 Cancelled. No agents dispatched.` and stop.
+
+---
+
 ## 🔴 Minimum Agent Requirement
 
 > **ORCHESTRATION = MINIMUM 3 DIFFERENT AGENTS**
@@ -165,3 +205,20 @@ Before marking complete:
 3. ✅ Orchestration Report generated
 
 > If any fails → keep going. Do not close the loop.
+
+---
+
+## Write usage log (MANDATORY — use the Write tool, do not skip)
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:orchestrate"`, `args`: stripped args
+   - `tier_declared`: `"HEAVY"`, `tier_observed`: recomputed from output size
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `"a"` | `"b"` | `null`
+   - `agents`: array of `{"name": "kit:<name>", "approx_tokens": <N>}` for every agent dispatched
+   - `skills`: skills consumed, `files_written`: integer, `approx_total_tokens`: sum across agents
+   - `user_verdict`: `null`, `notes`: `null`
+3. Write the updated JSON back using the **Write tool**.

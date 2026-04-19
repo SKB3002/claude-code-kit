@@ -141,9 +141,9 @@ Every `/kit:*` run appends one entry to `.kit/usage.json` in the project root. T
 
 ### 5.1 File location and creation
 
-- Path: `<project-root>/.kit/usage.json`
-- Auto-created on first run if absent. Must be gitignored (the `.gitignore` entry lands in Phase 1e).
-- Never write above the project root. Never create if the current directory is outside a project (detect by searching upward for `.git/` or `package.json` / `pyproject.toml` / `Cargo.toml` / `go.mod`).
+- Path: `.kit/usage.json` relative to **the user's current working directory** (their project). This is NOT inside `${CLAUDE_PLUGIN_ROOT}`. When in doubt, look for the directory that contains `.git/`, `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod`.
+- Auto-created on first run if absent. The `.kit/` directory is gitignored; `instincts.yaml` inside it is git-tracked (see `.gitignore` negation).
+- Never write above the project root. Never create if cwd is outside a recognisable project.
 
 ### 5.2 Run-entry shape
 
@@ -168,9 +168,13 @@ user_verdict             null | "useful" | "wasted" | "partial"
 notes                    null | string
 ```
 
-### 5.3 Appending
+### 5.3 Appending (MANDATORY — use the Write tool, do not skip or defer)
 
-Read the file, append to `runs[]`, write atomically (temp file + rename). If the file is corrupt, **do not overwrite**; write the new entry to `.kit/usage-RECOVERED.json` and inform the user. Data safety > feature smoothness.
+1. Use the **Read tool** to read `.kit/usage.json` in the project directory. If it doesn't exist, start with `{"runs": []}`.
+2. Parse the JSON, append the new run entry to `runs[]`.
+3. Use the **Write tool** to write the updated JSON back to `.kit/usage.json`.
+
+If the file is corrupt, write the new entry to `.kit/usage-RECOVERED.json` and inform the user instead of overwriting.
 
 ### 5.4 Cancellations still log
 

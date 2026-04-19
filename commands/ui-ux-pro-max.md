@@ -110,7 +110,20 @@ Agent(
 
 If `scope = landing`, additionally dispatch `kit:seo-specialist` with a prompt to verify the metadata, heading structure, and crawlability of the landing output.
 
-**Step 7 — Append to the usage log** per §5 of the approval-gate skill.
+**Step 7 — Write usage log (MANDATORY — use the Write tool, do not skip).**
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:ui-ux-pro-max"`, `args`: stripped args
+   - `tier_declared`: `"HEAVY"`, `tier_observed`: recomputed from output size
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `"a"` | `"b"` | `"c"`
+   - `agents`: array of `{"name": "kit:<name>", "approx_tokens": <N>}` for each dispatched agent
+   - `skills`: `["kit:frontend-design", "kit:web-design-guidelines", "kit:tailwind-patterns"]` plus any loaded
+   - `files_written`: integer, `approx_total_tokens`: sum across agents, `user_verdict`: `null`, `notes`: `null`
+3. Write the updated JSON back using the **Write tool**.
 
 **Step 8 — Print the inline HEAVY ledger.**
 

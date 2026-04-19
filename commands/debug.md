@@ -51,8 +51,20 @@ Agent(
 )
 ```
 
-**Step 6 — Append to the usage log.**
-Record to `.kit/usage.json` per §5 of the approval-gate skill. Minimum fields: command, args, tier_declared=MEDIUM, tier_observed (computed from agent response size via `tiers.md` formula), agents=[{name: "kit:debugger", approx_tokens}], skills consumed, files touched, duration, approved=true, chosen_alternative="a".
+**Step 6 — Write usage log (MANDATORY — use the Write tool, do not skip).**
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:debug"`, `args`: stripped args
+   - `tier_declared`: `"MEDIUM"`, `tier_observed`: recomputed from output size
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `null`
+   - `agents`: `[{"name": "kit:debugger", "approx_tokens": <N>}]`
+   - `skills`: `["kit:systematic-debugging", "kit:clean-code"]`
+   - `files_written`: integer, `approx_total_tokens`: integer, `user_verdict`: `null`, `notes`: `null`
+3. Write the updated JSON back using the **Write tool**.
 
 **Step 7 — Print the inline ledger.**
 

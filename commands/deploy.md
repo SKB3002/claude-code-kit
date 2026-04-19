@@ -153,7 +153,20 @@ Agent(
 
 For DEPLOY-PROD, run `kit:security-auditor` first with a quick final-scan prompt; only proceed to `kit:devops-engineer` if it returns clean.
 
-**Step 9 — Append to the usage log** per §5 of the approval-gate skill. Include the external platform and resulting deployment URL/version in the `notes` field so the ledger can show "deployed v1.2.3 to vercel" later.
+**Step 9 — Write usage log (MANDATORY — use the Write tool, do not skip).**
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:deploy"`, `args`: stripped args
+   - `tier_declared`: `"HEAVY"` (or `"MEDIUM"` for check mode), `tier_observed`: recomputed
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `null`
+   - `agents`: array of `{"name": "kit:<name>", "approx_tokens": <N>}` for each dispatched agent
+   - `skills`: array of skills consumed, `files_written`: integer, `approx_total_tokens`: integer
+   - `user_verdict`: `null`, `notes`: `"<platform> — <deployment URL or version>"` (or null if check-only)
+3. Write the updated JSON back using the **Write tool**.
 
 **Step 10 — Print the inline HEAVY ledger.**
 

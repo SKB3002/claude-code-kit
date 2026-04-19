@@ -109,7 +109,20 @@ Agent(
 )
 ```
 
-**Step 7 — Append to the usage log** per §5 of the approval-gate skill. Record `chosen_alternative`, each agent's approximate tokens, skills list, files written/changed, and duration.
+**Step 7 — Write usage log (MANDATORY — use the Write tool, do not skip).**
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:enhance"`, `args`: stripped args
+   - `tier_declared`: `"HEAVY"`, `tier_observed`: recomputed from output size
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `"a"` | `"b"` | `"c"`
+   - `agents`: array of `{"name": "kit:<name>", "approx_tokens": <N>}` for each dispatched agent
+   - `skills`: array of skills consumed, `files_written`: integer, `files_changed`: integer
+   - `approx_total_tokens`: sum across agents, `user_verdict`: `null`, `notes`: `null`
+3. Write the updated JSON back using the **Write tool**.
 
 **Step 8 — Print the inline HEAVY ledger.**
 

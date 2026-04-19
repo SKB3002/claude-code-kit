@@ -81,7 +81,20 @@ Agent(
 )
 ```
 
-**Step 6 — Append to the usage log** per §5 of the approval-gate skill.
+**Step 6 — Write usage log (MANDATORY — use the Write tool, do not skip).**
+
+Path: `.kit/usage.json` in the **user's current working directory** (their project), NOT inside `${CLAUDE_PLUGIN_ROOT}`.
+
+1. Read `.kit/usage.json` if it exists → parse the JSON. If absent → start with `{"runs": []}`.
+2. Append one entry to `runs`:
+   - `id`: `"r_<YYYY-MM-DD>_<NNN>"` (today + zero-padded seq = existing length + 1)
+   - `started_at` / `ended_at`: ISO-8601 UTC, `command`: `"/kit:test"`, `args`: stripped args
+   - `tier_declared`: `"MEDIUM"`, `tier_observed`: recomputed from output size
+   - `approved`: `true` (or `false` if cancelled), `chosen_alternative`: `null`
+   - `agents`: `[{"name": "kit:test-engineer", "approx_tokens": <N>}]`
+   - `skills`: skills consumed (e.g. `["kit:testing-patterns", "kit:tdd-workflow"]`)
+   - `files_written`: integer, `approx_total_tokens`: integer, `user_verdict`: `null`, `notes`: `null`
+3. Write the updated JSON back using the **Write tool**.
 
 **Step 7 — Print the inline ledger (GENERATE mode).**
 

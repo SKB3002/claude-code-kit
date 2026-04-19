@@ -20,32 +20,122 @@ This kit gives you a curated, MIT-licensed starting point. Install it, tweak it,
 
 ## Install
 
-### Option 1 — Claude Code plugin marketplace (once published)
+### Option 1 — VS Code / Cursor extension (easiest)
+
+1. Open the Claude Code extension sidebar
+2. Type `/plugin` → **Manage Plugins** → **Marketplace**
+3. Paste: `https://github.com/SKB3002/claude-code-kit`
+4. Enable the `kit` plugin → **Reload Window**
+
+### Option 2 — Claude Code CLI marketplace
 
 ```bash
 claude plugin install claude-code-kit
 ```
 
-### Option 2 — Clone into your project
+### Option 3 — Clone and use locally
 
 ```bash
 git clone https://github.com/SKB3002/claude-code-kit.git
 claude --plugin-dir ./claude-code-kit
 ```
 
-### Option 3 — Copy into your global plugin directory
-
-```bash
-git clone https://github.com/SKB3002/claude-code-kit.git ~/.claude/plugins/claude-code-kit
-```
-
-Then activate the kit's routing protocol by adding one line to your project's `CLAUDE.md`:
+Then activate the routing protocol in your project's `CLAUDE.md`:
 
 ```
 @kit/KIT_PROTOCOL.md
 ```
 
-That pulls the request classifier, agent routing, and Socratic Gate into every session.
+Run `/kit:help` to verify the plugin loaded — it will show all 17 commands, 20 agents, and 42 skills.
+
+---
+
+## Recommended workflow
+
+```
+1. /kit:brainstorm <idea>        — explore options before writing any code  (MEDIUM)
+2. /kit:plan <feature>           — turn the chosen direction into a plan file  (MEDIUM)
+3. /kit:create <app>             — scaffold a greenfield app  (HEAVY)
+   or /kit:enhance <change>      — add/update features in an existing app  (HEAVY)
+4. /kit:test generate <module>   — generate tests for the new code  (MEDIUM)
+   or /kit:test                  — run existing tests  (LIGHT)
+5. /kit:deploy staging           — pre-flight + deploy  (HEAVY)
+   then /kit:deploy production
+```
+
+**Sprinting on a bug?** `/kit:debug` → `/kit:test` → done.
+
+Every MEDIUM/HEAVY command renders an approval gate before dispatching agents — you always see what will run and can cancel or pick a lighter alternative. Pass `--yes` / `-y` to bypass.
+
+---
+
+## Commands (17)
+
+| Command | Tier | ~Tokens | What it does |
+|---|---|---|---|
+| `/kit:brainstorm <idea>` | MEDIUM | 10k–30k | Explore 3+ options with trade-offs — no code, ideas only |
+| `/kit:budget [low\|medium\|ok\|clear]` | LIGHT | <2k | Opt-in budget hint; adds a budget line to the HEAVY gate |
+| `/kit:context-budget [verbose]` | LIGHT | <2k | Session headroom signal (GREEN/YELLOW/RED) + drop-candidate detection |
+| `/kit:create <what to build>` | HEAVY | 80k–200k | Scaffold a new app — up to 5 specialists from planner through devops |
+| `/kit:debug <symptom or error>` | MEDIUM | 15k–40k | Systematic root-cause investigation and fix |
+| `/kit:deploy [check\|staging\|production\|rollback]` | HEAVY | 40k–100k | Pre-flight checks, deployment, and post-deploy verification |
+| `/kit:enhance <change to make>` | HEAVY | 50k–150k | Add or update features in an existing app |
+| `/kit:help [commands\|agents\|skills\|<name>]` | LIGHT | <5k | Full capability index — reads CATALOG.md, no bash |
+| `/kit:hookify <nl description>` | LIGHT | <2k | Natural language → hooks.json snippet (never writes the file itself) |
+| `/kit:instincts [status\|show\|promote\|clear]` | LIGHT | <2k | Project-scoped learned preferences in `.kit/instincts.yaml` |
+| `/kit:ledger [weekly\|by-agent\|by-skill\|roi\|...]` | LIGHT | <3k | Read-only views over `.kit/usage.json` |
+| `/kit:orchestrate <task or plan>` | HEAVY | 80k–250k | Coordinate ≥3 agents in a 2-phase plan→approve→implement pipeline |
+| `/kit:plan <what to plan>` | MEDIUM | 20k–50k | Generate `docs/PLAN-<slug>.md` — no code, plan file only |
+| `/kit:preview [start\|stop\|url]` | LIGHT | <2k | Start/stop the dev server and show the local URL |
+| `/kit:status` | LIGHT | <2k | Project state: stack, git, open TODOs, recent changes |
+| `/kit:test [generate\|run\|coverage\|watch]` | MEDIUM | 15k–60k | `generate` = MEDIUM (writes tests); other modes = LIGHT |
+| `/kit:ui-ux-pro-max <target>` | HEAVY | 60k–180k | Deep UI/UX audit + redesign via frontend-specialist + 3 design skills |
+
+---
+
+## Agents (20)
+
+Dispatch via `Agent(subagent_type="kit:<name>")`. All agents are namespaced `kit:`.
+
+### Architects / Leads
+
+| Agent | What it does |
+|---|---|
+| `kit:orchestrator` | Multi-agent coordinator — breaks large tasks into parallel slices |
+| `kit:project-planner` | Task breakdown, dependency graphs, `docs/PLAN-*.md` output |
+| `kit:product-owner` | Requirements, user stories, acceptance criteria, backlog |
+| `kit:product-manager` | MoSCoW prioritisation, "build the right thing on the right budget" |
+| `kit:code-archaeologist` | Legacy code reading, reverse engineering, modernisation planning |
+
+### Backend / Data / Infra
+
+| Agent | What it does |
+|---|---|
+| `kit:backend-specialist` | API routes, services, business logic (Node.js, Python/FastAPI, edge) |
+| `kit:database-architect` | Schema design, migrations, query optimisation, indexing |
+| `kit:devops-engineer` | Deployment, CI/CD, server management, rollbacks — high-risk ops |
+| `kit:security-auditor` | OWASP 2025 audits, zero-trust architecture, supply chain security |
+| `kit:penetration-tester` | Offensive security, red team, exploit simulations (CTF / engagement) |
+| `kit:performance-optimizer` | Profiling, Core Web Vitals, bundle size, runtime bottlenecks |
+
+### Frontend / UX
+
+| Agent | What it does |
+|---|---|
+| `kit:frontend-specialist` | React, Next.js, Vue, Svelte — components, state, responsive design |
+| `kit:mobile-developer` | React Native, Flutter — cross-platform mobile apps and native features |
+| `kit:seo-specialist` | SEO audits, Core Web Vitals, E-E-A-T, AI search (GEO) visibility |
+| `kit:game-developer` | Unity, Godot, Phaser, Three.js — mechanics, multiplayer, 2D/3D |
+
+### Quality / Ops
+
+| Agent | What it does |
+|---|---|
+| `kit:debugger` | Systematic root-cause analysis — the specialist for hard bugs |
+| `kit:test-engineer` | Test writing, TDD, coverage improvement |
+| `kit:qa-automation-engineer` | Playwright, Cypress, E2E pipelines, regression suites |
+| `kit:documentation-writer` | READMEs, API docs, changelogs — invoked only on explicit request |
+| `kit:explorer-agent` | Deep codebase discovery, architectural analysis, initial audits |
 
 ---
 
@@ -54,30 +144,11 @@ That pulls the request classifier, agent routing, and Socratic Gate into every s
 | Primitive | Count | Location |
 |---|---|---|
 | Subagents | 20 | [`agents/`](agents/) |
-| Skills | 41 | [`skills/`](skills/) |
-| Slash commands | 14 | [`commands/`](commands/) |
+| Skills | 42 | [`skills/`](skills/) |
+| Slash commands | 17 | [`commands/`](commands/) |
 | Validation scripts | 16 | `skills/<skill>/scripts/` (co-located with the skill) |
 | MCP servers | 5 pre-validated, opt-in | [`.mcp.example.json`](.mcp.example.json) + [`mcp-servers.md`](mcp-servers.md) |
 | Hooks | opt-in scaffold | [`hooks/`](hooks/) |
-
-### Slash commands
-
-All commands are namespaced by the plugin — Claude Code renders them as `/kit:<name>`. **Always invoke with the `/kit:` prefix** so it's clear the command is from this kit (and won't collide with built-ins or other plugins):
-
-`/kit:brainstorm` · `/kit:budget` · `/kit:context-budget` · `/kit:create` · `/kit:debug` · `/kit:deploy` · `/kit:enhance` · `/kit:help` · `/kit:hookify` · `/kit:instincts` · `/kit:ledger` · `/kit:orchestrate` · `/kit:plan` · `/kit:preview` · `/kit:status` · `/kit:test` · `/kit:ui-ux-pro-max`
-
-Run `/kit:help` in any session to see the full command/agent/skill catalog, rendered live from the plugin's filesystem — counts, tiers, and estimated tokens self-update when primitives are added.
-
-Each command declares a **tier** (LIGHT / MEDIUM / HEAVY) in its frontmatter. MEDIUM and HEAVY commands render an approval gate listing planned agents, skills, estimated token range, and lighter alternatives before they dispatch. LIGHT commands run directly. See the [Approval-first by design](#approval-first-by-design) section below.
-
-### Subagent roster
-
-Dispatch via `Agent(subagent_type="kit:<name>")`. All 20 subagents are namespaced with the `kit:` prefix:
-
-**Architects / leads:** `kit:orchestrator` · `kit:project-planner` · `kit:product-owner` · `kit:product-manager` · `kit:code-archaeologist`
-**Backend / data / infra:** `kit:backend-specialist` · `kit:database-architect` · `kit:devops-engineer` · `kit:security-auditor` · `kit:penetration-tester` · `kit:performance-optimizer`
-**Frontend / UX:** `kit:frontend-specialist` · `kit:mobile-developer` · `kit:seo-specialist` · `kit:game-developer`
-**Quality / ops:** `kit:debugger` · `kit:test-engineer` · `kit:qa-automation-engineer` · `kit:documentation-writer` · `kit:explorer-agent`
 
 ### Highlighted skills
 
@@ -162,19 +233,25 @@ Full guide: [hooks/README.md](hooks/README.md).
 
 ## Typical workflow
 
-```bash
-# 1) Explore the codebase or frame the problem
-/kit:brainstorm auth refactor
+```
+# New feature from scratch
+/kit:brainstorm caching strategy for LLM gateway   # explore options, no code
+/kit:plan Redis token-bucket rate limiting          # outputs docs/PLAN-rate-limit.md
+/kit:create FastAPI service with rate limiting      # scaffold the app (HEAVY gate)
+/kit:test generate src/middleware/rate_limit.py     # write tests
+/kit:deploy staging                                 # pre-flight + deploy
 
-# 2) Create a plan (no code yet)
-/kit:plan FastAPI rate limiting with Redis
+# Improving an existing app
+/kit:enhance add dark mode to the dashboard         # HEAVY gate, scoped
+/kit:test                                           # run existing suite
+/kit:deploy production                              # final deploy
 
-# 3) Orchestrate multiple agents to implement it
-/kit:orchestrate implement the plan in docs/PLAN-rate-limit.md
+# Debugging
+/kit:debug "500 on POST /api/orders under load"     # MEDIUM gate, systematic
+/kit:test run                                       # verify fix didn't break anything
 
-# 4) Run pre-deploy checks
-/kit:test
-/kit:deploy staging
+# Big cross-cutting change
+/kit:orchestrate implement plan in docs/PLAN-auth-refactor.md   # ≥3 agents, 2-phase
 ```
 
 ---
