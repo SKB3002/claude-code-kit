@@ -2,6 +2,27 @@
 
 All notable changes to Claude Code Kit are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] — 2026-04-19
+
+Patch. Fixes three issues found during smoke testing of v0.3.0.
+
+### Fixed
+
+- **`/kit:help` tool-call explosion** — replaced glob-based filesystem discovery with a single Read of a new `CATALOG.md` file. Eliminates all bash commands from the overview path and fixes a Windows bug where `skills/*/SKILL.md` returned 0 matches via the Glob tool. Max 2 tool calls total (1 for overview, 2 for lookup).
+- **Usage log never written** — every MEDIUM/HEAVY command said "append per §5 of approval-gate skill" (too indirect; Claude skipped it). Each command now has a self-contained, explicit write block: Write tool, correct path (user project cwd, not `${CLAUDE_PLUGIN_ROOT}`), and JSON schema inline. `approval-gate/SKILL.md §5` updated to match.
+- **`/kit:orchestrate` missing gate + usage step** — the command had no HEAVY approval gate and no usage logging. Both added; 2-phase protocol and ≥3-agent requirement preserved.
+
+### Added
+
+- `CATALOG.md` — pre-built capability index (17 commands, 20 agents, 42 skills with one-line descriptions and workflow order). Source of truth for `/kit:help`; update it when adding a primitive.
+
+### Changed
+
+- `README.md` — VS Code/Cursor install option added; "Recommended workflow" section after install; full command table (17) with tier + one-liner; full agent tables (20) grouped by domain.
+- `commands/ledger.md` — empty-log message now correctly names MEDIUM/HEAVY commands as the ones that write the log.
+
+---
+
 ## [0.3.0] — 2026-04-19
 
 Minor, non-breaking, additive. All v0.2.1 commands continue to work; six new commands land, agent dispatch becomes deterministic, and the kit gains an approval-first consent layer + usage tracking.
