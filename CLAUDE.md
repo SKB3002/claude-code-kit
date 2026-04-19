@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A Claude Code **plugin** — not an application. The "product" is prompt content distributed as markdown: 20 subagents, 40 skills, 11 slash commands, plus 16 optional Python validation scripts and opt-in automation scaffolds. There is no build, bundle, or compiled artifact. Editing a file ships the change.
+A Claude Code **plugin** — not an application. The "product" is prompt content distributed as markdown: 20 subagents, 42 skills, 17 slash commands, plus 16 optional Python validation scripts and opt-in automation scaffolds. There is no build, bundle, or compiled artifact. Editing a file ships the change.
 
 Plugin manifest: [.claude-plugin/plugin.json](.claude-plugin/plugin.json). Authoritative operating rules for host projects: [KIT_PROTOCOL.md](KIT_PROTOCOL.md).
 
@@ -75,6 +75,9 @@ P0 ([KIT_PROTOCOL.md](KIT_PROTOCOL.md)) > P1 (agent `.md`) > P2 (skill `SKILL.md
 - **Slash-command files use `$ARGUMENTS`** as the user-input placeholder and require `description:` + `argument-hint:` frontmatter. They are stack-aware — `/test` branches pytest vs. `npm test`, `/preview` branches uvicorn vs. `npm run dev`, `/deploy` branches on detected stack. Preserve that branching when editing.
 - **`/plan` emits `docs/PLAN-{slug}.md`** — slug is derived from user input, ≤30 chars, lowercase, hyphens.
 - **`/orchestrate` requires ≥3 agents and 2-phase execution** (Plan → user approval → Implement) and enforces a *Context Passing MANDATORY* rule: each parallel agent must be handed the full relevant context in its prompt because parallel agents cannot see each other's work. Don't edit out that section.
+- **Approval-first dispatch (v0.3+).** Every `/kit:*` command declares a tier (`LIGHT` / `MEDIUM` / `HEAVY`) in its frontmatter. MEDIUM and HEAVY commands load [skills/approval-gate/SKILL.md](skills/approval-gate/SKILL.md) and render the gate before any `Agent()` dispatch or file write. LIGHT commands run directly. Every run — gated, bypassed (`--yes`/`-y`), or cancelled — appends one entry to `.kit/usage.json` (gitignored). When adding a new command, pick its tier honestly against [skills/approval-gate/tiers.md](skills/approval-gate/tiers.md); do not tier-inflate for importance or tier-deflate to skip the gate.
+- **Explicit `Agent()` dispatch, not prose.** Commands that delegate to an agent must do it via a real `Agent(subagent_type="kit:<name>", prompt=…)` call in the command body — not by saying "apply the X persona". See [commands/orchestrate.md](commands/orchestrate.md) and the Phase 1c rewrites of `/kit:debug`, `/kit:plan`, `/kit:create`, `/kit:enhance`, `/kit:deploy`, `/kit:test`, `/kit:brainstorm`, `/kit:ui-ux-pro-max` for the canonical pattern.
+- **Honesty contract for costs.** Anywhere the kit shows a token count, prefix `~`. Never convert to dollars. Never fabricate remaining-quota or reset-timestamp numbers — Claude Code doesn't expose them, so we don't invent them.
 
 ## Gotchas (landmines from the port)
 
@@ -84,6 +87,8 @@ P0 ([KIT_PROTOCOL.md](KIT_PROTOCOL.md)) > P1 (agent `.md`) > P2 (skill `SKILL.md
 - **JSON has no comments.** `hooks.json` and `.mcp.json` are strict JSON and must stay clean. The `_doc` key convention is allowed **only** in the `*.example.json` files, never the live ones.
 - **Windows LF→CRLF warnings from git are expected** and not a bug.
 - **`ui-ux-pro-max` no longer uses a proprietary design search script** (the upstream did). It now delegates to `frontend-design`, `web-design-guidelines`, and `tailwind-patterns` via `frontend-specialist`. Keep that delegation.
+- **`brainstorming` skill was renamed to `socratic-gate`** in v0.3.0 to avoid near-collision with `/kit:brainstorm`. Frontmatter notes the former name. Don't reintroduce `brainstorming` as a skill handle — references to `kit:brainstorming` outside git history are stale.
+- **`.kit/` is gitignored.** The approval-gate writes `.kit/usage.json`; `/kit:budget --here` may write `.kit/budget.json`; `/kit:instincts promote` writes `.kit/instincts.yaml` (git-tracked by default for team visibility — users who want it private can add to their own `.gitignore`). Be precise about which of the three you mean when editing docs.
 
 
 
